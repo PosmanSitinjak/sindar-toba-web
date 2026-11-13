@@ -116,7 +116,7 @@ export default function Navbar() {
                 SINDAR TOBA
               </span>
               <span className="text-[8px] sm:text-[9.5px] font-semibold text-[#575e5b] tracking-[1.2px] sm:tracking-[1.8px] uppercase">
-                Kaldera UNESCO • Batak
+                Dari Toba, Untuk Masa Depan
               </span>
             </div>
           </Link>

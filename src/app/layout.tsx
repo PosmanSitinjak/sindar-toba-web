@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SINDAR TOBA — Kemewahan Budaya & Eksplorasi Danau Toba",
+  title: "SINDAR TOBA — Dari Toba, Untuk Masa Depan",
   description:
-    "Jelajahi keagungan tebing kaldera vulkanik UNESCO, tradisi tenun ulos, kriya Batak, dan sajian rempah andaliman di danau vulkanik terbesar di dunia.",
+    "Dari Toba, Untuk Masa Depan. Platform kurasi pariwisata berkelas dunia, pelestarian budaya Batak, dan pemberdayaan UMKM di kaldera Danau Toba UNESCO.",
   keywords: [
     "Danau Toba",
     "Wisata Danau Toba",

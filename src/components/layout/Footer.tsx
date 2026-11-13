@@ -26,7 +26,7 @@ export default function Footer() {
                   SINDAR TOBA
                 </span>
                 <span className="text-[9px] font-medium text-[#c29d59] tracking-[1.5px] uppercase">
-                  Kaldera UNESCO • Warisan Batak
+                  Dari Toba, Untuk Masa Depan
                 </span>
               </div>
             </Link>
@@ -34,6 +34,10 @@ export default function Footer() {
             <p className="text-[13px] text-white/75 leading-relaxed max-w-sm">
               Platform kurasi resmi pariwisata berkelas dunia, pelestarian warisan budaya Batak,
               dan pemberdayaan ekonomi UMKM di sekeliling kaldera Danau Toba.
+            </p>
+
+            <p className="text-[13px] font-newsreader italic text-[#c29d59]/90 mt-1">
+              &ldquo;Dari Toba, Untuk Masa Depan&rdquo;
             </p>
 
             <div className="flex items-center gap-3 mt-1 text-white/80">

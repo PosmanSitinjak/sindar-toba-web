@@ -92,6 +92,11 @@ export default function HeroSection() {
           Danau Toba.
         </h1>
 
+        {/* Tagline Official */}
+        <p className="max-w-xl text-[13px] sm:text-[14.5px] font-newsreader italic text-[#c29d59] tracking-wide mb-4 sm:mb-5 opacity-90">
+          &ldquo;Dari Toba, Untuk Masa Depan&rdquo;
+        </p>
+
         {/* Subtitle */}
         <p className="max-w-2xl text-[14px] sm:text-base md:text-lg text-white/85 font-sans font-normal leading-relaxed mb-8 sm:mb-10 px-2">
           Jelajahi keagungan tebing kaldera, tradisi tenun ulos ribuan tahun, sajian rempah andaliman,
