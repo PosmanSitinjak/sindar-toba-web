@@ -112,11 +112,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="hover:text-white transition-colors block py-0.5">
-                  E-Tiket & Dashboard Tamu
-                </Link>
-              </li>
-              <li>
                 <Link href="/bantuan" className="hover:text-white transition-colors block py-0.5">
                   Pusat Bantuan & FAQ
                 </Link>

@@ -342,28 +342,6 @@ export default function Navbar() {
                   <HelpCircle className="w-4 h-4 text-[#c29d59]" />
                   <span>Pusat Bantuan & FAQ</span>
                 </Link>
-
-                {authRole === "mitra" && (
-                  <Link
-                    href="/mitra/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-[13px] font-medium text-[#1a3a34] bg-white border border-[#e8e2d9]"
-                  >
-                    <Building2 className="w-4 h-4 text-[#c29d59]" />
-                    <span>Dashboard Mitra (Kelola Usaha)</span>
-                  </Link>
-                )}
-
-                {authRole === "user" && (
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-[13px] font-medium text-[#1a3a34] bg-white border border-[#e8e2d9]"
-                  >
-                    <User className="w-4 h-4 text-[#c29d59]" />
-                    <span>Dashboard Wisatawan (E-Tiket)</span>
-                  </Link>
-                )}
               </nav>
             </div>
 
