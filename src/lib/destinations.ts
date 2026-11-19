@@ -113,7 +113,12 @@ export async function fetchDestinations(): Promise<Destination[]> {
       .select("*")
       .order("rating", { ascending: false });
 
-    if (error || !data || data.length === 0) {
+    if (error) {
+      console.warn("Supabase query error, falling back to local data:", error.message);
+      return fallbackDestinations;
+    }
+
+    if (!data || data.length === 0) {
       return fallbackDestinations;
     }
 
