@@ -224,14 +224,11 @@ export default function DaftarPage() {
 
             {/* Kode Referral Field */}
             <div className="p-3.5 rounded-2xl bg-[#f5efe6]/70 border border-[#c29d59]/40">
-              <div className="flex justify-between items-center mb-1">
+              <div className="mb-1.5">
                 <label className="text-[11px] font-bold text-[#1a3a34] uppercase tracking-wider flex items-center gap-1.5">
                   <Gift className="w-3.5 h-3.5 text-[#b8653a]" />
                   <span>Kode Referral Teman (Opsional)</span>
                 </label>
-                <span className="text-[10px] text-[#b8653a] font-semibold">
-                  Bonus Komisi & Promo
-                </span>
               </div>
               <div className="relative">
                 <input
