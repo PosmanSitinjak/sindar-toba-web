@@ -36,7 +36,7 @@ export default function PengalamanPage() {
       price: "175.000",
       rating: 4.9,
       reviews: 340,
-      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+      image: "/images/destinations/tenun-ulos.jpg",
       desc: "Pelajari filosofi ragi motif Harungguan, teknik pewarnaan alam dari daun tanaman lokal, dan praktik menenun langsung di alat tenun gedog tradisional.",
       highlights: [
         "Praktek menenun langsung bersama inang penenun senior",

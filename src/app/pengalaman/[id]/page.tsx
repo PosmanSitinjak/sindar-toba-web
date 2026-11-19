@@ -59,7 +59,7 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
       rating: 4.9,
       reviews: 340,
       host: "Sanggar Tenun Harungguan Suhi-suhi",
-      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1200&q=80",
+      image: "/images/destinations/tenun-ulos.jpg",
       desc: "Pelajari filosofi ragi motif Harungguan, teknik pewarnaan alam dari daun tanaman lokal, dan praktik menenun langsung di alat tenun gedog tradisional.",
       itinerary: [
         { time: "09:30 - 10:15", title: "Filosofi Ragi & Makna Ulos Batak", desc: "Mendengarkan kisah makna spiritual ulos dari tetua adat wanita." },

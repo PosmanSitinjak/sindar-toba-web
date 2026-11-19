@@ -37,10 +37,8 @@ const destinationsData: { [key: string]: any } = {
     rating: 4.9,
     baseReviews: 1240,
     photos: [
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=800&q=80",
+      "/images/destinations/bukit-holbung.jpg",
+      "/images/destinations/bukit-tarabunga.jpg",
     ],
     aboutTitle: "Keajaiban Savana Kaldera di Jantung Samosir",
     aboutP1:
@@ -59,10 +57,8 @@ const destinationsData: { [key: string]: any } = {
     rating: 4.9,
     baseReviews: 620,
     photos: [
-      "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+      "/images/destinations/tenun-ulos.jpg",
+      "/images/destinations/desa-tomok.jpg",
     ],
     aboutTitle: "Warisan Luhur Tenun Gedog Rumah Bolon Huta Raja",
     aboutP1:
@@ -81,10 +77,8 @@ const destinationsData: { [key: string]: any } = {
     rating: 4.8,
     baseReviews: 890,
     photos: [
-      "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+      "/images/destinations/desa-tomok.jpg",
+      "/images/destinations/sigale-gale.jpg",
     ],
     aboutTitle: "Pusat Peradaban Megalitikum dan Sejarah Dinasti Batak",
     aboutP1:
@@ -103,10 +97,8 @@ const destinationsData: { [key: string]: any } = {
     rating: 4.9,
     baseReviews: 520,
     photos: [
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=800&q=80",
+      "/images/destinations/lembah-bakkara.jpg",
+      "/images/destinations/bukit-holbung.jpg",
     ],
     aboutTitle: "Tanah Kelahiran Raja-Raja di Dasar Kaldera Toba",
     aboutP1:
@@ -125,10 +117,8 @@ const destinationsData: { [key: string]: any } = {
     rating: 4.8,
     baseReviews: 410,
     photos: [
-      "https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+      "/images/destinations/bukit-tarabunga.jpg",
+      "/images/destinations/bukit-holbung.jpg",
     ],
     aboutTitle: "Sudut Pandang Sunset dan Terasering Sawah Kaldera Balige",
     aboutP1:
@@ -148,10 +138,8 @@ const destinationsData: { [key: string]: any } = {
     rating: 4.9,
     baseReviews: 1850,
     photos: [
-      "https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+      "/images/destinations/sipiso-piso.jpg",
+      "/images/destinations/bukit-tarabunga.jpg",
     ],
     aboutTitle: "Kemegahan Air Terjun Vertikal di Bibir Kaldera Utara",
     aboutP1:
@@ -170,9 +158,8 @@ const destinationsData: { [key: string]: any } = {
     rating: 4.8,
     baseReviews: 1420,
     photos: [
-      "https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+      "/images/destinations/bukit-holbung.jpg",
+      "/images/destinations/bukit-tarabunga.jpg",
     ],
     aboutTitle: "Gardu Pandang 360 Derajat di Punggung Kaldera Toba",
     aboutP1:
@@ -191,9 +178,8 @@ const destinationsData: { [key: string]: any } = {
     rating: 4.9,
     baseReviews: 310,
     photos: [
-      "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+      "/images/destinations/kopi-lintong.jpg",
+      "/images/destinations/lembah-bakkara.jpg",
     ],
     aboutTitle: "Cita Rasa Kopi Arabika Specialty Dataran Tinggi Kaldera",
     aboutP1:
