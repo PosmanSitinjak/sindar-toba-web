@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 import CalderaMapModal from "@/components/discovery/CalderaMapModal";
+import { fetchDestinations, fallbackDestinations, Destination } from "@/lib/destinations";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   Search,
   MapPin,
@@ -12,6 +14,7 @@ import {
   ArrowRight,
   Map as MapIcon,
   MessageCircle,
+  Database,
 } from "lucide-react";
 
 export default function JelajahiPage() {
@@ -20,6 +23,15 @@ export default function JelajahiPage() {
   const [selectedRegency, setSelectedRegency] = useState("Semua Kabupaten");
   const [sortBy, setSortBy] = useState("popular");
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [listings, setListings] = useState<Destination[]>(fallbackDestinations);
+
+  useEffect(() => {
+    fetchDestinations().then((data) => {
+      if (data && data.length > 0) {
+        setListings(data);
+      }
+    });
+  }, []);
 
   const categories = [
     "Semua",
@@ -38,93 +50,6 @@ export default function JelajahiPage() {
     "Tapanuli Utara",
     "Simalungun (Parapat)",
     "Karo (Tongging)",
-  ];
-
-  const listings = [
-    {
-      id: "bukit-holbung",
-      title: "Bukit Holbung Samosir",
-      category: "Geosite Alam",
-      regency: "Samosir",
-      subregion: "Harian Boho, Samosir",
-      rating: 4.9,
-      reviews: 1240,
-      price: "15.000",
-      priceUnit: "tiket",
-      image: "/images/destinations/bukit-holbung.jpg",
-      description: "Pemandangan bukit savana hijau yang membentang luas berhadapan langsung dengan bentang kaldera Danau Toba.",
-      tags: ["Geosite UNESCO", "Sunset Point", "Trekking Ringan"],
-    },
-    {
-      id: "desa-tomok",
-      title: "Desa Wisata Tomok & Makam Raja Sidabutar",
-      category: "Warisan Budaya",
-      regency: "Samosir",
-      subregion: "Simanindo, Samosir",
-      rating: 4.8,
-      reviews: 890,
-      price: "25.000",
-      priceUnit: "orang",
-      image: "/images/destinations/desa-tomok.jpg",
-      description: "Pusat kebudayaan Batak kuno, makam sarkofagus batu Raja Sidabutar, dan pertunjukan sakral Patung Sigale-gale.",
-      tags: ["Cagar Budaya", "Museum Batak", "Sigale-gale"],
-    },
-    {
-      id: "lembah-bakkara",
-      title: "Lembah Bakkara & Aek Sipangolu",
-      category: "Geosite Alam",
-      regency: "Humbang Hasundutan",
-      subregion: "Bakti Raja, Humbahas",
-      rating: 4.9,
-      reviews: 520,
-      price: "20.000",
-      priceUnit: "orang",
-      image: "/images/destinations/lembah-bakkara.jpg",
-      description: "Lembah subur diapit tebing kaldera, mata air abadi Aek Sipangolu, dan istana pahlawan Raja Sisingamangaraja.",
-      tags: ["Mata Air Alami", "Situs Sejarah", "Bawang Bakkara"],
-    },
-    {
-      id: "kopi-lintong-roastery",
-      title: "Sentra Kopi Arabika Lintong & Cupping Room",
-      category: "Kuliner Khas",
-      regency: "Humbang Hasundutan",
-      subregion: "Lintongnihuta, Humbahas",
-      rating: 4.9,
-      reviews: 310,
-      price: "45.000",
-      priceUnit: "porsi",
-      image: "/images/destinations/kopi-lintong.jpg",
-      description: "Cicipi kemurnian kopi specialty dataran tinggi 1.400 mdpl dengan aroma rempah tanah vulkanik yang mendunia.",
-      tags: ["Specialty Coffee", "Agrowisata", "Oleh-oleh"],
-    },
-    {
-      id: "tenun-ulos-suhi-suhi",
-      title: "Kampung Penenun Ulos Huta Raja Suhi-suhi",
-      category: "Kriya & Tenun",
-      regency: "Samosir",
-      subregion: "Pangururan, Samosir",
-      rating: 4.9,
-      reviews: 620,
-      price: "Free",
-      priceUnit: "kunjungan",
-      image: "/images/destinations/tenun-ulos.jpg",
-      description: "Deretan rumah adat Batak tradisional tempat para inang menenun kain Ulos Harungguan dan Sadum secara turun-temurun.",
-      tags: ["Rumah Adat Bolon", "Penenun Asli", "Kriya Budaya"],
-    },
-    {
-      id: "bukit-tarabunga",
-      title: "Bukit Tarabunga Balige",
-      category: "Geosite Alam",
-      regency: "Toba (Balige)",
-      subregion: "Tampahan, Balige",
-      rating: 4.8,
-      reviews: 410,
-      price: "10.000",
-      priceUnit: "orang",
-      image: "/images/destinations/bukit-tarabunga.jpg",
-      description: "Titik terbaik menikmati panorama lengkung air danau kebiruan yang dipagari terasering persawahan hijau.",
-      tags: ["Spot Foto", "Sunset Point", "Persawahan"],
-    },
   ];
 
   const filteredListings = listings.filter((item) => {
