@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
   TrendingUp,
   Users,
@@ -22,6 +23,7 @@ import {
   CreditCard,
   FileText,
   Trash2,
+  Database,
 } from "lucide-react";
 
 interface ListingItem {
@@ -81,8 +83,32 @@ export default function DashboardMitraPage() {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
-    }, 4000);
+    }, 4500);
   };
+
+  // Sync listings with Supabase destinations table
+  useEffect(() => {
+    if (isSupabaseConfigured && supabase) {
+      supabase
+        .from("destinations")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .then(({ data, error }) => {
+          if (!error && data && data.length > 0) {
+            setListings(
+              data.map((d: any) => ({
+                id: d.id,
+                title: d.title,
+                category: d.category,
+                price: d.price ? `Rp ${Number(d.price).toLocaleString("id-ID")} / ${d.price_unit || "orang"}` : "Gratis",
+                quota: "Tersedia",
+                status: "Aktif",
+              }))
+            );
+          }
+        });
+    }
+  }, []);
 
   // Form State for Add Listing
   const [newTitle, setNewTitle] = useState("");
@@ -95,8 +121,8 @@ export default function DashboardMitraPage() {
   // Form State for Withdraw
   const [withdrawAmount, setWithdrawAmount] = useState<string>("5250000");
 
-  // Handle Add Listing Submit
-  const handleAddListing = (e: React.FormEvent) => {
+  // Handle Add Listing Submit (Direct Supabase Cloud Insertion)
+  const handleAddListing = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newPrice.trim() || !newQuota.trim()) {
       showToast("Mohon lengkapi judul, tarif harga, dan kuota layanan!");
@@ -105,8 +131,13 @@ export default function DashboardMitraPage() {
 
     const rawNum = parseInt(newPrice.replace(/\D/g, "")) || 0;
     const formattedPrice = `Rp ${rawNum.toLocaleString("id-ID")} ${newUnit}`;
+    const generatedSlug =
+      newTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, "") || `layanan-${Date.now()}`;
+    const newId = generatedSlug;
 
-    const newId = `LIST-0${listings.length + 1}`;
     const newEntry: ListingItem = {
       id: newId,
       title: newTitle.trim(),
@@ -116,6 +147,7 @@ export default function DashboardMitraPage() {
       status: "Aktif",
     };
 
+    // Optimistic UI update
     setListings([newEntry, ...listings]);
     setIsAddModalOpen(false);
 
@@ -125,28 +157,102 @@ export default function DashboardMitraPage() {
     setNewQuota("");
     setNewDesc("");
 
-    showToast(`Layanan "${newEntry.title}" berhasil diterbitkan ke katalog SINDAR TOBA!`);
+    // Execute insert in Supabase
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase.from("destinations").insert({
+          id: newId,
+          title: newEntry.title,
+          category: newCategory,
+          regency: "Samosir",
+          subregion: "Pangururan, Samosir",
+          rating: 5.0,
+          reviews: 1,
+          price: rawNum,
+          price_unit: newUnit.replace(/\//g, "").trim(),
+          image: "/images/destinations/bukit-holbung.jpg",
+          description: newDesc.trim() || `Layanan resmi terverifikasi BPODT oleh ${business.name}.`,
+          tags: [newCategory, "Mitra Resmi"],
+        });
+
+        if (error) {
+          console.error("Supabase insert error:", error);
+          showToast(`Layanan tersimpan lokal (Supabase: ${error.message})`);
+        } else {
+          showToast(`Layanan "${newEntry.title}" BERHASIL tersimpan di Database Supabase!`);
+        }
+      } catch (err: any) {
+        console.error("Insert exception:", err);
+      }
+    } else {
+      showToast(`Layanan "${newEntry.title}" berhasil diterbitkan ke katalog!`);
+    }
   };
 
-  // Handle Update / Edit Listing
-  const handleUpdateListing = (e: React.FormEvent) => {
+  // Handle Update / Edit Listing (Direct Supabase Cloud Update)
+  const handleUpdateListing = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingListing) return;
 
     setListings(
       listings.map((l) => (l.id === editingListing.id ? editingListing : l))
     );
-    const updatedTitle = editingListing.title;
+    const updatedItem = editingListing;
     setEditingListing(null);
-    showToast(`Perubahan pada "${updatedTitle}" berhasil disimpan!`);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const rawNum = parseInt(updatedItem.price.replace(/\D/g, "")) || 0;
+        const { error } = await supabase
+          .from("destinations")
+          .update({
+            title: updatedItem.title,
+            category: updatedItem.category,
+            price: rawNum,
+          })
+          .eq("id", updatedItem.id);
+
+        if (error) {
+          console.error("Supabase update error:", error);
+        } else {
+          showToast(`Perubahan "${updatedItem.title}" BERHASIL diupdate di Database Supabase!`);
+          return;
+        }
+      } catch (err) {
+        console.error("Update exception:", err);
+      }
+    }
+
+    showToast(`Perubahan pada "${updatedItem.title}" berhasil disimpan!`);
   };
 
-  // Handle Delete Listing
-  const handleDeleteListing = (id: string) => {
+  // Handle Delete Listing (Direct Supabase Cloud Deletion)
+  const handleDeleteListing = async (id: string) => {
     const target = listings.find((l) => l.id === id);
+    
+    // Optimistic UI update
     setListings(listings.filter((l) => l.id !== id));
     setEditingListing(null);
-    showToast(`Layanan "${target?.title || id}" telah dihapus.`);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase
+          .from("destinations")
+          .delete()
+          .eq("id", id);
+
+        if (error) {
+          console.error("Supabase delete error:", error);
+          showToast(`Gagal menghapus dari database: ${error.message}`);
+        } else {
+          showToast(`Layanan "${target?.title || id}" BERHASIL dihapus permanen dari Database Supabase!`);
+        }
+      } catch (err: any) {
+        console.error("Delete exception:", err);
+      }
+    } else {
+      showToast(`Layanan "${target?.title || id}" telah dihapus.`);
+    }
   };
 
   // Handle Withdraw Submit
@@ -466,6 +572,17 @@ export default function DashboardMitraPage() {
                         title="Edit Listing"
                       >
                         <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Hapus layanan "${lst.title}" permanen dari database Supabase?`)) {
+                            handleDeleteListing(lst.id);
+                          }
+                        }}
+                        className="p-2 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 hover:border-red-400 transition-colors"
+                        title="Hapus Layanan dari Database"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

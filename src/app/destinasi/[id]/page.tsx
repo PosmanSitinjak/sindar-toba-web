@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
   MapPin,
   Star,
@@ -192,7 +193,9 @@ const destinationsData: { [key: string]: any } = {
 
 export default function DetailDestinasiPage({ params }: { params?: { id?: string } }) {
   const destId = params?.id || "bukit-holbung";
-  const currentDest = destinationsData[destId] || destinationsData["bukit-holbung"];
+  const [currentDest, setCurrentDest] = useState(
+    destinationsData[destId] || destinationsData["bukit-holbung"]
+  );
 
   const [activeTab, setActiveTab] = useState("tentang");
   const [ticketCount, setTicketCount] = useState(2);
@@ -208,6 +211,30 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
   const [userName, setUserName] = useState<string>("Christofer Sitinjak");
 
   useEffect(() => {
+    // If available in Supabase, sync data
+    if (isSupabaseConfigured && supabase && destId) {
+      supabase
+        .from("destinations")
+        .select("*")
+        .eq("id", destId)
+        .single()
+        .then(({ data, error }) => {
+          if (!error && data) {
+            setCurrentDest((prev: any) => ({
+              ...prev,
+              id: data.id,
+              title: data.title || prev.title,
+              basePrice: data.price !== null ? Number(data.price) : prev.basePrice,
+              priceUnit: data.price_unit ? `/${data.price_unit}` : prev.priceUnit,
+              location: data.subregion || `${data.regency}, Danau Toba`,
+              badge: data.category || prev.badge,
+              photos: data.image ? [data.image, ...(prev.photos || [])] : prev.photos,
+              aboutP1: data.description || prev.aboutP1,
+            }));
+          }
+        });
+    }
+
     if (typeof window !== "undefined") {
       const role = localStorage.getItem("sindar_role") as "user" | "mitra" | null;
       if (role === "user" || role === "mitra") {
