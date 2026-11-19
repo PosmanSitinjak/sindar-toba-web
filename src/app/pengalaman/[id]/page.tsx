@@ -105,7 +105,7 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
       rating: 4.9,
       reviews: 190,
       host: "Dapur Rempah Pusaka Balige",
-      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80",
+      image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1200&q=80",
       desc: "Mengenal 'merica Batak' andaliman yang memberikan sensasi getir segar khas, dipadukan kecombrang dan asam gelugur untuk meracik Ikan Mas Arsik otentik.",
       itinerary: [
         { time: "10:00 - 10:45", title: "Mengenal 12 Rempah Khas Batak", desc: "Mencium dan mencicipi andaliman mentah, unte jungga, dan asam cikala." },

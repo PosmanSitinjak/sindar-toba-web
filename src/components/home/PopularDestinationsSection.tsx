@@ -38,7 +38,7 @@ export default function PopularDestinationsSection() {
       rating: 4.8,
       reviews: 890,
       price: "25.000",
-      image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
+      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
       description: "Pusat kebudayaan Batak kuno, makam batu Raja Sidabutar, dan pertunjukan sakral Patung Sigale-gale.",
       badge: "Situs Bersejarah",
     },

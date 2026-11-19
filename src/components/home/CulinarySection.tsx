@@ -41,7 +41,7 @@ export default function CulinarySection() {
       producer: "Perajin Seni Desa Tomok",
       price: "340.000",
       rating: 4.9,
-      image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80",
+      image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=600&q=80",
       notes: "Simbol Kemakmuran & Penolak Bala, Kayu Mahoni",
     },
   ];

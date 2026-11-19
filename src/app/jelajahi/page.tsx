@@ -65,7 +65,7 @@ export default function JelajahiPage() {
       reviews: 890,
       price: "25.000",
       priceUnit: "orang",
-      image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
+      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
       description: "Pusat kebudayaan Batak kuno, makam sarkofagus batu Raja Sidabutar, dan pertunjukan sakral Patung Sigale-gale.",
       tags: ["Cagar Budaya", "Museum Batak", "Sigale-gale"],
     },

@@ -17,7 +17,7 @@ export default function ItineraryInspirationSection() {
       ],
       estimatedCost: "Rp 1.850.000",
       vibe: "Budaya & Panorama",
-      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+      image: "https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: "2d1n-bakkara",

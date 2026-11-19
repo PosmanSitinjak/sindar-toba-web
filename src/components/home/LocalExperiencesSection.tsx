@@ -44,7 +44,7 @@ export default function LocalExperiencesSection() {
       duration: "3.5 Jam",
       groupSize: "Maks. 6 org",
       price: "190.000",
-      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+      image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=800&q=80",
       category: "Gastronomi",
       desc: "Mengenal 'merica Batak' andaliman yang memberikan sensasi getir segar khas, dipadukan kecombrang dan asam gelugur.",
     },

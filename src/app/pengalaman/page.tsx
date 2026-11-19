@@ -90,7 +90,7 @@ export default function PengalamanPage() {
       price: "190.000",
       rating: 4.9,
       reviews: 190,
-      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+      image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=800&q=80",
       desc: "Mengenal 'merica Batak' andaliman yang memberikan sensasi getir segar khas, dipadukan kecombrang dan asam gelugur untuk meracik Ikan Mas Arsik otentik.",
       highlights: [
         "Bahan baku segar dari pasar tradisional Balige",
