@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
@@ -15,11 +15,163 @@ import {
   MapPin,
   CheckCircle2,
   Compass,
+  Gift,
+  Copy,
+  Check,
+  Share2,
+  Wallet,
+  ArrowUpRight,
+  DollarSign,
+  Users,
+  Building,
+  AlertCircle,
+  Sparkles,
+  ArrowRight,
+  X,
 } from "lucide-react";
 
 export default function DashboardWisatawanPage() {
   const [activeTab, setActiveTab] = useState("tiket");
   const [showQrModal, setShowQrModal] = useState<string | null>(null);
+
+  // Referral & Commission States
+  const [referralCode, setReferralCode] = useState("TOBA-CHRISTOFER");
+  const [referralBalance, setReferralBalance] = useState(150000);
+  const [totalWithdrawn, setTotalWithdrawn] = useState(200000);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const [withdrawForm, setWithdrawForm] = useState({
+    method: "BCA",
+    accountNumber: "",
+    accountName: "",
+    amount: "150000",
+  });
+
+  const [referralList, setReferralList] = useState([
+    {
+      id: "REF-001",
+      name: "Sarah Hutabarat",
+      date: "18 Nov 2026",
+      status: "Selesai (Komisi Cair)",
+      commission: 25000,
+      reward: "Pendaftaran Akun Wisatawan",
+    },
+    {
+      id: "REF-002",
+      name: "Daniel Silalahi",
+      date: "15 Nov 2026",
+      status: "Selesai (Komisi Cair)",
+      commission: 25000,
+      reward: "Pemesanan Tiket Bukit Holbung",
+    },
+    {
+      id: "REF-003",
+      name: "Maya Nainggolan",
+      date: "12 Nov 2026",
+      status: "Selesai (Komisi Cair)",
+      commission: 25000,
+      reward: "Pendaftaran Akun Wisatawan",
+    },
+    {
+      id: "REF-004",
+      name: "Budi Tambunan",
+      date: "09 Nov 2026",
+      status: "Selesai (Komisi Cair)",
+      commission: 25000,
+      reward: "Pemesanan Tur Solu Bolon",
+    },
+    {
+      id: "REF-005",
+      name: "Grace Manurung",
+      date: "04 Nov 2026",
+      status: "Selesai (Komisi Cair)",
+      commission: 25000,
+      reward: "Pendaftaran Akun Wisatawan",
+    },
+    {
+      id: "REF-006",
+      name: "Hendra Sinaga",
+      date: "01 Nov 2026",
+      status: "Selesai (Komisi Cair)",
+      commission: 25000,
+      reward: "Pemesanan Tiket Sipiso-piso",
+    },
+  ]);
+
+  // Sync profile & referral from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedName = localStorage.getItem("sindar_user_name");
+      if (storedName) {
+        const slug = storedName.toUpperCase().replace(/\s+/g, "");
+        setReferralCode(`TOBA-${slug.slice(0, 10)}`);
+      }
+
+      const storedBalance = localStorage.getItem("sindar_referral_balance");
+      if (storedBalance) {
+        setReferralBalance(parseInt(storedBalance, 10));
+      }
+
+      const storedReferrals = localStorage.getItem("sindar_referrals_data");
+      if (storedReferrals) {
+        try {
+          const parsed = JSON.parse(storedReferrals);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setReferralList((prev) => [...parsed, ...prev]);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  const handleCopyCode = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(referralCode);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2500);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      const link = `https://sindar-toba-web.vercel.app/daftar?ref=${referralCode}`;
+      navigator.clipboard.writeText(link);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = encodeURIComponent(
+      `Horas! Yuk jelajahi keindahan Danau Toba & budaya Batak bersama SINDAR TOBA.\n\nDaftar pakai kode referalku "${referralCode}" untuk dapatkan voucher sambutan spesial & e-tiket resmi kaldera:\nhttps://sindar-toba-web.vercel.app/daftar?ref=${referralCode}`
+    );
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+  };
+
+  const handleWithdrawSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const withdrawAmt = parseInt(withdrawForm.amount.replace(/\D/g, ""), 10) || 0;
+    if (withdrawAmt > referralBalance) {
+      alert("Saldo komisi Anda tidak mencukupi untuk penarikan sejumlah ini.");
+      return;
+    }
+    if (withdrawAmt < 50000) {
+      alert("Batas penarikan minimum komisi adalah Rp 50.000.");
+      return;
+    }
+
+    const newBalance = referralBalance - withdrawAmt;
+    setReferralBalance(newBalance);
+    setTotalWithdrawn((prev) => prev + withdrawAmt);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sindar_referral_balance", newBalance.toString());
+    }
+    setWithdrawSuccess(true);
+  };
 
   const userProfile = {
     name: "Christofer Sitinjak",
@@ -144,7 +296,7 @@ export default function DashboardWisatawanPage() {
             </div>
 
             {/* Quick Stat Counter Pills */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full md:w-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 w-full md:w-auto">
               <div className="px-3 sm:px-4 py-2 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9] text-center">
                 <span className="font-cinzel text-lg sm:text-xl font-bold text-[#1a3a34] block">
                   {activeTickets.length}
@@ -163,6 +315,19 @@ export default function DashboardWisatawanPage() {
                 </span>
                 <span className="text-[9.5px] sm:text-[10px] text-[#575e5b] uppercase tracking-wider">Favorit</span>
               </div>
+              <div
+                onClick={() => setActiveTab("referral")}
+                className="px-3 sm:px-4 py-2 rounded-2xl bg-amber-50/70 border border-[#c29d59]/50 text-center cursor-pointer hover:bg-amber-100/60 transition-colors"
+                title="Buka Tab Referral & Komisi"
+              >
+                <span className="font-cinzel text-base sm:text-lg font-bold text-[#b8653a] block">
+                  Rp {(referralBalance / 1000).toFixed(0)}rb
+                </span>
+                <span className="text-[9.5px] sm:text-[10px] text-[#b8653a] uppercase font-semibold tracking-wider flex items-center justify-center gap-1">
+                  <Gift className="w-2.5 h-2.5" />
+                  <span>Komisi</span>
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -171,6 +336,7 @@ export default function DashboardWisatawanPage() {
         <div className="flex items-center gap-1 sm:gap-2 border-b border-[#e8e2d9] pb-px mb-6 sm:mb-8 overflow-x-auto no-scrollbar">
           {[
             { id: "tiket", label: "Tiket & Pesanan", icon: Ticket },
+            { id: "referral", label: "Referral & Komisi", icon: Gift },
             { id: "itinerary", label: "Itinerary Saya", icon: Calendar },
             { id: "wishlist", label: "Favorit", icon: Heart },
             { id: "riwayat", label: "Riwayat", icon: History },
@@ -188,6 +354,11 @@ export default function DashboardWisatawanPage() {
               >
                 <Icon className="w-4 h-4 text-[#c29d59]" />
                 <span>{tab.label}</span>
+                {tab.id === "referral" && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full bg-[#b8653a] text-white text-[9.5px] font-bold">
+                    Baru
+                  </span>
+                )}
               </button>
             );
           })}
@@ -408,6 +579,432 @@ export default function DashboardWisatawanPage() {
             <p className="text-[12.5px] max-w-md mx-auto">
               Setelah Anda mengunjungi destinasi dan melakukan scan QR E-Tiket di lokasi, ulasan serta kenangan perjalanan Anda akan tersimpan di sini.
             </p>
+          </div>
+        )}
+
+        {/* TAB 5: REFERRAL & KOMISI */}
+        {activeTab === "referral" && (
+          <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+            {/* Header Referral */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="font-cinzel text-[10.5px] font-bold text-[#c29d59] uppercase tracking-wider block">
+                  Program Kemitraan Wisatawan
+                </span>
+                <h2 className="font-newsreader text-2xl sm:text-3xl font-semibold text-[#1a3a34]">
+                  Kode Referral & Komisi Tunai
+                </h2>
+                <p className="text-[13px] text-[#575e5b] mt-0.5">
+                  Ajak teman & keluarga mendaftar akun SINDAR TOBA. Dapatkan <strong>komisi Rp 25.000</strong> per orang langsung ke saldo Anda.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setWithdrawSuccess(false);
+                  setIsWithdrawModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[12px] font-semibold uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
+              >
+                <Wallet className="w-4 h-4 text-[#c29d59]" />
+                <span>Cairkan Komisi</span>
+              </button>
+            </div>
+
+            {/* Main Referral Sharing Hero Card */}
+            <div className="bg-gradient-to-br from-[#1a3a34] via-[#122a25] to-[#0c1c18] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#c29d59]/40 relative overflow-hidden">
+              {/* Batak Watermark */}
+              <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 opacity-10 pointer-events-none">
+                <Gift className="w-72 h-72 text-[#c29d59]" />
+              </div>
+
+              <div className="relative z-10 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-[#c29d59]/50 text-[#c29d59] text-[11px] font-semibold uppercase tracking-wider mb-3">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Komisi Tunai Rp 25.000 / Pendaftaran</span>
+                </div>
+
+                <h3 className="font-newsreader text-2xl sm:text-3xl font-light text-white mb-2">
+                  Bagikan Cinta Danau Toba,{" "}
+                  <span className="italic text-[#c29d59] font-normal">Dapatkan Penghasilan Tambahan</span>
+                </h3>
+
+                <p className="text-[13px] sm:text-[14px] text-white/80 leading-relaxed mb-6">
+                  Setiap orang yang mendaftar menggunakan kode atau tautan unik Anda akan mendapatkan voucher diskon selamat datang, dan Anda akan menerima komisi tunai yang bisa dicairkan ke rekening bank atau e-wallet.
+                </p>
+
+                {/* Referral Code Box */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                  {/* Code Card */}
+                  <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-white/60 uppercase font-semibold tracking-wider block">
+                        KODE REFERRAL ANDA
+                      </span>
+                      <span className="font-mono text-lg font-bold tracking-widest text-[#c29d59]">
+                        {referralCode}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleCopyCode}
+                      className="px-3.5 py-1.5 rounded-xl bg-white text-[#1a3a34] hover:bg-[#faf8f5] text-[11px] font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                      {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedCode ? "Tersalin!" : "Salin"}</span>
+                    </button>
+                  </div>
+
+                  {/* Share Link Card */}
+                  <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3.5 flex items-center justify-between">
+                    <div className="truncate pr-2">
+                      <span className="text-[10px] text-white/60 uppercase font-semibold tracking-wider block">
+                        TAUTAN UNDANGAN LANGSUNG
+                      </span>
+                      <span className="text-xs text-white/90 truncate block">
+                        sindar-toba-web.vercel.app/daftar?ref={referralCode}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleCopyLink}
+                      className="px-3.5 py-1.5 rounded-xl bg-white text-[#1a3a34] hover:bg-[#faf8f5] text-[11px] font-semibold flex items-center gap-1.5 shadow-sm transition-all shrink-0"
+                    >
+                      {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedLink ? "Tersalin!" : "Salin Link"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Share to WhatsApp Button */}
+                <button
+                  onClick={handleShareWhatsApp}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white text-[12.5px] font-semibold uppercase tracking-wider shadow-lg transition-transform active:scale-95"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Bagikan Undangan ke WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Financial Stat Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+              {/* Card 1: Saldo Siap Tarik */}
+              <div className="bg-white border border-[#e8e2d9] rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider">
+                      Saldo Komisi Tersedia
+                    </span>
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                      <Wallet className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#1a3a34]">
+                    Rp {referralBalance.toLocaleString("id-ID")}
+                  </div>
+                  <span className="text-[11.5px] text-emerald-700 font-medium flex items-center gap-1 mt-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Siap dicairkan ke rekening kapan saja</span>
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setWithdrawSuccess(false);
+                    setIsWithdrawModalOpen(true);
+                  }}
+                  className="mt-4 w-full py-2.5 rounded-xl border border-[#1a3a34] text-[#1a3a34] hover:bg-[#1a3a34] hover:text-white text-[11.5px] font-semibold uppercase tracking-wider transition-all text-center"
+                >
+                  Tarik Dana Sekarang
+                </button>
+              </div>
+
+              {/* Card 2: Total Ditarik */}
+              <div className="bg-white border border-[#e8e2d9] rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider">
+                      Total Telah Dicairkan
+                    </span>
+                    <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center">
+                      <ArrowUpRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#575e5b]">
+                    Rp {totalWithdrawn.toLocaleString("id-ID")}
+                  </div>
+                  <span className="text-[11.5px] text-[#575e5b] mt-1 block">
+                    Semua penarikan berhasil dikirim
+                  </span>
+                </div>
+                <div className="mt-4 py-2 px-3 bg-[#faf8f5] rounded-xl text-[11px] text-[#575e5b] border border-[#e8e2d9] text-center">
+                  BCA • Mandiri • BRI • GoPay • DANA
+                </div>
+              </div>
+
+              {/* Card 3: Total Teman */}
+              <div className="bg-white border border-[#e8e2d9] rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider">
+                      Teman Berhasil Bergabung
+                    </span>
+                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center">
+                      <Users className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#1a3a34]">
+                    {referralList.length} Orang
+                  </div>
+                  <span className="text-[11.5px] text-[#575e5b] mt-1 block">
+                    Semua akun aktif terverifikasi
+                  </span>
+                </div>
+                <div className="mt-4 py-2 px-3 bg-emerald-50 text-emerald-800 rounded-xl text-[11px] font-semibold text-center border border-emerald-200">
+                  + Rp 25.000 / undangan baru
+                </div>
+              </div>
+            </div>
+
+            {/* How It Works Explainer */}
+            <div className="bg-white border border-[#e8e2d9] rounded-3xl p-6 sm:p-8 shadow-sm">
+              <h4 className="font-cinzel text-sm sm:text-base font-bold text-[#1a3a34] uppercase tracking-wider mb-5 text-center sm:text-left">
+                Cara Kerja Sistem Referral SINDAR TOBA
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9]">
+                  <div className="w-9 h-9 rounded-full bg-[#1a3a34] text-[#c29d59] font-cinzel font-bold text-sm flex items-center justify-center shrink-0">
+                    1
+                  </div>
+                  <div>
+                    <h5 className="text-[13px] font-bold text-[#1a3a34] mb-1">
+                      Bagikan Kode Anda
+                    </h5>
+                    <p className="text-[12px] text-[#575e5b] leading-relaxed">
+                      Kirimkan kode referral atau tautan pendaftaran ke teman, grup keluarga, atau media sosial Anda.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9]">
+                  <div className="w-9 h-9 rounded-full bg-[#1a3a34] text-[#c29d59] font-cinzel font-bold text-sm flex items-center justify-center shrink-0">
+                    2
+                  </div>
+                  <div>
+                    <h5 className="text-[13px] font-bold text-[#1a3a34] mb-1">
+                      Teman Mendaftar Akun
+                    </h5>
+                    <p className="text-[12px] text-[#575e5b] leading-relaxed">
+                      Teman Anda memasukkan kode referral saat membuat akun wisatawan dan langsung menerima diskon sambutan.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9]">
+                  <div className="w-9 h-9 rounded-full bg-[#1a3a34] text-[#c29d59] font-cinzel font-bold text-sm flex items-center justify-center shrink-0">
+                    3
+                  </div>
+                  <div>
+                    <h5 className="text-[13px] font-bold text-[#1a3a34] mb-1">
+                      Komisi Rp 25.000 Cair
+                    </h5>
+                    <p className="text-[12px] text-[#575e5b] leading-relaxed">
+                      Komisi tunai Rp 25.000 per orang langsung masuk ke saldo Anda dan dapat ditarik ke rekening bank atau e-wallet.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Referral Invitee History Table */}
+            <div className="bg-white border border-[#e8e2d9] rounded-3xl p-6 sm:p-8 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#e8e2d9] mb-4 gap-2">
+                <div>
+                  <h4 className="font-newsreader text-xl sm:text-2xl font-semibold text-[#1a3a34]">
+                    Riwayat Teman yang Diajak
+                  </h4>
+                  <p className="text-[12.5px] text-[#575e5b]">
+                    Daftar teman yang mendaftar menggunakan kode referral Anda beserta rincian komisi.
+                  </p>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold self-start sm:self-auto">
+                  Total {referralList.length} Undangan
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-[12.5px]">
+                  <thead>
+                    <tr className="border-b border-[#e8e2d9] text-[10.5px] font-bold text-[#575e5b] uppercase tracking-wider">
+                      <th className="py-3 px-3">Nama Pengguna</th>
+                      <th className="py-3 px-3">Tanggal Bergabung</th>
+                      <th className="py-3 px-3">Aktivitas</th>
+                      <th className="py-3 px-3">Komisi Diterima</th>
+                      <th className="py-3 px-3 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e8e2d9]/60">
+                    {referralList.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-[#faf8f5] transition-colors">
+                        <td className="py-3.5 px-3">
+                          <div className="font-semibold text-[#1a3a34]">{item.name}</div>
+                          <div className="text-[10.5px] text-[#575e5b]">ID: {item.id}</div>
+                        </td>
+                        <td className="py-3.5 px-3 text-[#575e5b] whitespace-nowrap">
+                          {item.date}
+                        </td>
+                        <td className="py-3.5 px-3 text-[#1a3a34]">
+                          {item.reward}
+                        </td>
+                        <td className="py-3.5 px-3 font-semibold text-emerald-700 whitespace-nowrap">
+                          + Rp {item.commission.toLocaleString("id-ID")}
+                        </td>
+                        <td className="py-3.5 px-3 text-right">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10.5px] font-semibold">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>{item.status}</span>
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Penarikan Komisi (Withdraw Modal) */}
+        {isWithdrawModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+              <button
+                onClick={() => setIsWithdrawModalOpen(false)}
+                className="absolute right-5 top-5 p-1.5 rounded-full hover:bg-gray-100 text-[#575e5b]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {!withdrawSuccess ? (
+                <>
+                  <div className="text-center mb-5">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 text-[#b8653a] mx-auto mb-2 flex items-center justify-center border border-amber-200">
+                      <Wallet className="w-6 h-6" />
+                    </div>
+                    <span className="font-cinzel text-[10.5px] font-bold text-[#c29d59] uppercase tracking-wider block">
+                      Pencairan Saldo Komisi
+                    </span>
+                    <h3 className="font-newsreader text-2xl font-bold text-[#1a3a34]">
+                      Tarik Dana Referral
+                    </h3>
+                    <p className="text-[12px] text-[#575e5b] mt-1">
+                      Saldo Anda: <strong className="text-emerald-700 font-bold">Rp {referralBalance.toLocaleString("id-ID")}</strong>
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleWithdrawSubmit} className="space-y-3.5">
+                    <div>
+                      <label className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider block mb-1">
+                        Metode Pencairan (Bank / E-Wallet)
+                      </label>
+                      <select
+                        value={withdrawForm.method}
+                        onChange={(e) => setWithdrawForm({ ...withdrawForm, method: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-[13px] font-medium text-[#1a3a34] focus:outline-none focus:border-[#1a3a34]"
+                      >
+                        <option value="BCA">Bank BCA</option>
+                        <option value="Mandiri">Bank Mandiri</option>
+                        <option value="BRI">Bank BRI</option>
+                        <option value="BNI">Bank BNI</option>
+                        <option value="Bank Sumut">Bank Sumut</option>
+                        <option value="GoPay">GoPay</option>
+                        <option value="OVO">OVO</option>
+                        <option value="DANA">DANA</option>
+                        <option value="ShopeePay">ShopeePay</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider block mb-1">
+                        Nomor Rekening / Nomor HP E-Wallet
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: 8271039821 atau 08123456789"
+                        value={withdrawForm.accountNumber}
+                        onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-[13px] text-[#1a3a34] focus:outline-none focus:border-[#1a3a34]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider block mb-1">
+                        Nama Pemilik Rekening / Akun
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Nama lengkap sesuai buku tabungan"
+                        value={withdrawForm.accountName}
+                        onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-[13px] text-[#1a3a34] focus:outline-none focus:border-[#1a3a34]"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider block">
+                          Jumlah Penarikan (Rp)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setWithdrawForm({ ...withdrawForm, amount: referralBalance.toString() })}
+                          className="text-[10.5px] font-bold text-[#b8653a] hover:underline"
+                        >
+                          Tarik Semua
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        min={50000}
+                        max={referralBalance}
+                        required
+                        value={withdrawForm.amount}
+                        onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-[13px] font-bold text-[#1a3a34] focus:outline-none focus:border-[#1a3a34]"
+                      />
+                      <span className="text-[10px] text-[#575e5b] mt-1 block">
+                        Min. penarikan Rp 50.000 • Bebas biaya admin
+                      </span>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[12px] font-semibold uppercase tracking-wider transition-colors shadow-md mt-4"
+                    >
+                      Konfirmasi Pencairan Dana
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 mx-auto mb-3 flex items-center justify-center border border-emerald-200">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="font-newsreader text-2xl font-bold text-[#1a3a34] mb-1">
+                    Permintaan Berhasil Dikirim!
+                  </h3>
+                  <p className="text-[13px] text-[#575e5b] max-w-sm mx-auto mb-5 leading-relaxed">
+                    Dana sebesar <strong>Rp {parseInt(withdrawForm.amount, 10).toLocaleString("id-ID")}</strong> sedang diproses ke {withdrawForm.method} ({withdrawForm.accountNumber}) atas nama {withdrawForm.accountName}. Estimasi dana masuk: 1x24 jam.
+                  </p>
+                  <button
+                    onClick={() => setIsWithdrawModalOpen(false)}
+                    className="px-6 py-2.5 rounded-full bg-[#1a3a34] text-white text-[12px] font-semibold uppercase tracking-wider"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

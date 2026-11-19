@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Lock, Mail, User, Phone, ArrowLeft, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Lock, Mail, User, Phone, ArrowLeft, ShieldCheck, CheckCircle2, Gift, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function DaftarPage() {
@@ -13,12 +13,64 @@ export default function DaftarPage() {
     email: "",
     phone: "",
     password: "",
+    referralCode: "",
     agreeTerms: true,
   });
+  const [referralValid, setReferralValid] = useState(false);
+
+  // Auto-detect referral code from query string: ?ref=KODE
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const refParam = params.get("ref");
+      if (refParam) {
+        setFormData((prev) => ({ ...prev, referralCode: refParam.toUpperCase() }));
+        setReferralValid(true);
+      }
+    }
+  }, []);
+
+  const handleReferralChange = (val: string) => {
+    const code = val.toUpperCase().trim();
+    setFormData((prev) => ({ ...prev, referralCode: code }));
+    setReferralValid(code.length >= 4);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Pendaftaran Akun Berhasil!\nSelamat datang di SINDAR TOBA, ${formData.name}.\nE-Tiket dan konfirmasi akun telah disiapkan.`);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sindar_role", "user");
+      localStorage.setItem("sindar_user_name", formData.name);
+      localStorage.setItem("sindar_user_phone", formData.phone);
+      localStorage.setItem("sindar_user_email", formData.email);
+
+      // Save referral tracking
+      if (formData.referralCode) {
+        localStorage.setItem("sindar_applied_referral", formData.referralCode);
+        
+        // Add new record to simulated referral network
+        const existingReferrals = JSON.parse(localStorage.getItem("sindar_referrals_data") || "[]");
+        existingReferrals.unshift({
+          id: `REF-${Date.now().toString().slice(-4)}`,
+          name: formData.name,
+          date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+          commission: 25000,
+          status: "Komisi Masuk",
+          phone: formData.phone,
+        });
+        localStorage.setItem("sindar_referrals_data", JSON.stringify(existingReferrals));
+
+        // Increment earnings
+        const currentBalance = parseInt(localStorage.getItem("sindar_referral_balance") || "150000", 10);
+        localStorage.setItem("sindar_referral_balance", (currentBalance + 25000).toString());
+      }
+    }
+
+    const refNote = formData.referralCode 
+      ? `\n\n🎉 Kode Referral "${formData.referralCode}" aktif! Pengajak Anda menerima komisi Rp 25.000 dan Anda mendapatkan Voucher Diskon Selamat Datang!` 
+      : "";
+
+    alert(`Pendaftaran Akun Berhasil!\nSelamat datang di SINDAR TOBA, ${formData.name}.${refNote}\nE-Tiket dan akun wisatawan Anda telah siap.`);
     router.push("/dashboard");
   };
 
@@ -168,6 +220,42 @@ export default function DaftarPage() {
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-[13px] text-[#1a3a34] focus:outline-none focus:border-[#1a3a34]"
                 />
               </div>
+            </div>
+
+            {/* Kode Referral Field */}
+            <div className="p-3.5 rounded-2xl bg-[#f5efe6]/70 border border-[#c29d59]/40">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-[11px] font-bold text-[#1a3a34] uppercase tracking-wider flex items-center gap-1.5">
+                  <Gift className="w-3.5 h-3.5 text-[#b8653a]" />
+                  <span>Kode Referral Teman (Opsional)</span>
+                </label>
+                <span className="text-[10px] text-[#b8653a] font-semibold">
+                  Bonus Komisi & Promo
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Contoh: TOBA-CHRISTOFER"
+                  value={formData.referralCode}
+                  onChange={(e) => handleReferralChange(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#e8e2d9] text-[13px] font-mono tracking-wider font-semibold text-[#1a3a34] placeholder:font-sans placeholder:font-normal placeholder:text-gray-400 focus:outline-none focus:border-[#c29d59]"
+                />
+                {referralValid && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Aktif</span>
+                  </div>
+                )}
+              </div>
+              {referralValid && (
+                <p className="text-[11px] text-emerald-800 mt-2 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#c29d59] shrink-0" />
+                  <span>
+                    Kode valid! Pengajak Anda akan mendapatkan <strong>komisi Rp 25.000</strong> dan Anda mendapatkan voucher sambutan Danau Toba.
+                  </span>
+                </p>
+              )}
             </div>
 
             <div className="pt-1">
