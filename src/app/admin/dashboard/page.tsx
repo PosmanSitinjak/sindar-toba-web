@@ -256,7 +256,7 @@ export default function SuperadminDashboardPage() {
     },
   ]);
 
-  const recentTransactions = [
+  const defaultTransactions = [
     {
       trxId: "TRX-ST-98214",
       traveler: "Bagus Pratama",
@@ -294,6 +294,54 @@ export default function SuperadminDashboardPage() {
       time: "4 Jam Lalu",
     },
   ];
+
+  const [recentTransactions, setRecentTransactions] = useState(defaultTransactions);
+
+  // Sync Transactions from LocalStorage & Supabase tickets
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedTrx = localStorage.getItem("sindar_transactions");
+        if (storedTrx) {
+          const parsed = JSON.parse(storedTrx);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setRecentTransactions((prev) => {
+              const existingIds = new Set(prev.map((t) => t.trxId));
+              const newOnes = parsed.filter((m: any) => !existingIds.has(m.trxId));
+              return [...newOnes, ...prev];
+            });
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      supabase
+        .from("tickets")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .then(({ data, error }) => {
+          if (!error && data && data.length > 0) {
+            const mapped = data.map((d: any) => ({
+              trxId: `TRX-${d.booking_code}`,
+              traveler: "Wisatawan Terverifikasi",
+              item: `${d.visitors}x ${d.destination_name}`,
+              amount: `Rp ${Number(d.total_paid).toLocaleString("id-ID")}`,
+              channel: "QRIS Dinamis",
+              escrowStatus: "Tertahan di Escrow",
+              time: "Baru saja",
+            }));
+            setRecentTransactions((prev) => {
+              const existingIds = new Set(prev.map((t) => t.trxId));
+              const newOnes = mapped.filter((m: any) => !existingIds.has(m.trxId));
+              return [...newOnes, ...prev];
+            });
+          }
+        });
+    }
+  }, []);
 
   const handleApprovePartner = (id: string) => {
     setPartners(

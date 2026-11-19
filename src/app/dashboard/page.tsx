@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
   Ticket,
   Calendar,
@@ -182,7 +183,7 @@ export default function DashboardWisatawanPage() {
     memberSince: "November 2026",
   };
 
-  const activeTickets = [
+  const initialTickets = [
     {
       id: "TKT-001",
       bookingCode: "ST-2026-HB0491",
@@ -214,6 +215,60 @@ export default function DashboardWisatawanPage() {
       organizerName: "Komunitas Nahkoda Solu",
     },
   ];
+
+  const [activeTickets, setActiveTickets] = useState(initialTickets);
+
+  // Sync tickets from LocalStorage & Supabase
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedTkt = localStorage.getItem("sindar_purchased_tickets");
+        if (storedTkt) {
+          const parsed = JSON.parse(storedTkt);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setActiveTickets((prev) => {
+              const existingCodes = new Set(prev.map((t) => t.bookingCode));
+              const newOnes = parsed.filter((m: any) => !existingCodes.has(m.bookingCode));
+              return [...newOnes, ...prev];
+            });
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      supabase
+        .from("tickets")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .then(({ data, error }) => {
+          if (!error && data && data.length > 0) {
+            const mapped = data.map((d: any) => ({
+              id: d.id,
+              bookingCode: d.booking_code,
+              destination: d.destination_name,
+              geosite: d.geosite_label || "Geosite Kaldera Toba",
+              date: d.visit_date,
+              time: d.visit_time || "08:00 - 17:00 WIB",
+              visitors: `${d.visitors} Orang`,
+              addons: d.addons || [],
+              totalPaid: `Rp ${Number(d.total_paid).toLocaleString("id-ID")}`,
+              status: d.status || "Lunas (Siap Digunakan)",
+              location: d.location || "Danau Toba",
+              organizerPhone: d.organizer_phone || "6281234567890",
+              organizerName: d.organizer_name || "Pokdarwis Danau Toba",
+            }));
+            setActiveTickets((prev) => {
+              const existingCodes = new Set(prev.map((t) => t.bookingCode));
+              const newOnes = mapped.filter((m: any) => !existingCodes.has(m.bookingCode));
+              return [...newOnes, ...prev];
+            });
+          }
+        });
+    }
+  }, []);
 
   const savedItineraries = [
     {

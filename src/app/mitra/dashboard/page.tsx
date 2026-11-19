@@ -316,7 +316,7 @@ export default function DashboardMitraPage() {
     },
   ];
 
-  const recentBookings = [
+  const defaultBookings = [
     {
       code: "ST-BK-9182",
       guest: "Bagus Pratama",
@@ -348,6 +348,49 @@ export default function DashboardMitraPage() {
       phone: "6281234567893",
     },
   ];
+
+  const [recentBookings, setRecentBookings] = useState(defaultBookings);
+
+  // Sync recent bookings from LocalStorage (Demo & Testing live purchases)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedTkt = localStorage.getItem("sindar_purchased_tickets");
+        if (storedTkt) {
+          const parsed = JSON.parse(storedTkt);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const mapped = parsed.map((t: any) => ({
+              code: t.bookingCode || "ST-BK-DEMO",
+              guest: "Wisatawan Terverifikasi (Christofer)",
+              service: t.destination || "Layanan Mitra Toba",
+              checkIn: t.date || "Hari Ini",
+              guests: t.visitors || "1 Tamu",
+              total: t.totalPaid || "Rp 150.000",
+              status: "Lunas (Siap Datang)",
+              phone: "6281234567890",
+            }));
+
+            setRecentBookings((prev) => {
+              const existingCodes = new Set(prev.map((b) => b.code));
+              const newOnes = mapped.filter((m: any) => !existingCodes.has(m.code));
+              return [...newOnes, ...prev];
+            });
+
+            // Update balance for testing demo
+            const extraRevenue = parsed.reduce((acc: number, cur: any) => {
+              const num = parseInt((cur.totalPaid || "0").replace(/\D/g, "")) || 0;
+              return acc + num;
+            }, 0);
+            if (extraRevenue > 0) {
+              setBalance((prev) => 5250000 + extraRevenue);
+            }
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#faf8f5] text-[#1a3a34]">
