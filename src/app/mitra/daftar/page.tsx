@@ -56,7 +56,36 @@ export default function PendaftaranMitraPage() {
   const handleNext = () => {
     if (step < 3) setStep(step + 1);
     else {
-      alert(`Pendaftaran Mitra Berhasil!\nUsaha "${formData.businessName}" sedang dalam proses verifikasi kurasi BPODT. Anda kini dapat masuk ke Dashboard Mitra.`);
+      const generatedCode = `MIT-BPODT-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newMitra = {
+        name: formData.businessName || "Mitra Baru Kaldera Toba",
+        owner: formData.ownerName || "Pelaku Usaha Lokal",
+        category: formData.category,
+        regency: `Kabupaten ${formData.regency}`,
+        address: formData.address || "Kawasan Danau Toba",
+        phone: formData.phone || "6281234567890",
+        email: formData.email || "mitra@sindartoba.id",
+        code: generatedCode,
+        verifiedDate: "Baru Terdaftar (Verifikasi Instan BPODT)",
+        bank: formData.bankName || "Bank Sumut",
+        accountNumber: formData.accountNumber || "102.04.88.192841-0",
+        accountHolder: formData.accountHolder || formData.ownerName,
+        balance: 0,
+      };
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("sindar_role", "mitra");
+          localStorage.setItem("sindar_current_mitra", JSON.stringify(newMitra));
+          localStorage.setItem("sindar_mitra_name", newMitra.name);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      alert(
+        `Pendaftaran Mitra Berhasil!\n\nUsaha: "${newMitra.name}"\nKode Kemitraan: ${generatedCode}\n\nAkun Anda kini telah aktif dengan akses penuh ke Dashboard Mitra & Alat Scanner Loket.`
+      );
       router.push("/mitra/dashboard");
     }
   };

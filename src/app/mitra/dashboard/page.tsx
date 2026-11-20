@@ -28,6 +28,8 @@ import {
   Camera,
 } from "lucide-react";
 
+import { PRESET_MITRA_LIST } from "@/lib/mitra";
+
 interface ListingItem {
   id: string;
   title: string;
@@ -38,17 +40,21 @@ interface ListingItem {
 }
 
 export default function DashboardMitraPage() {
-  // Business information
-  const business = {
+  // Default business information
+  const defaultBusiness = {
     name: "Homestay Rura Batak & Tour Samosir",
     owner: "Mangatur Sitinjak",
     regency: "Kabupaten Samosir",
     code: "MIT-BPODT-0482",
+    category: "Homestay & Penginapan",
     verifiedDate: "15 Januari 2024",
     bank: "Bank Sumut",
     accountNumber: "102.02.04.098124-1",
     accountHolder: "Mangatur Sitinjak",
   };
+
+  const [business, setBusiness] = useState(defaultBusiness);
+  const [isSwitchMitraModalOpen, setIsSwitchMitraModalOpen] = useState(false);
 
   // State: Balance & Listings
   const [balance, setBalance] = useState<number>(5250000);
@@ -86,6 +92,40 @@ export default function DashboardMitraPage() {
     setTimeout(() => {
       setToastMessage(null);
     }, 4500);
+  };
+
+  // Sync active Mitra profile from LocalStorage (multi-mitra support)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("sindar_current_mitra");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.name) {
+            setBusiness(parsed);
+            if (typeof parsed.balance === "number") {
+              setBalance(parsed.balance);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse current mitra:", e);
+      }
+    }
+  }, []);
+
+  const switchMitra = (m: any) => {
+    setBusiness(m);
+    if (typeof m.balance === "number") {
+      setBalance(m.balance);
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sindar_role", "mitra");
+      localStorage.setItem("sindar_current_mitra", JSON.stringify(m));
+      localStorage.setItem("sindar_mitra_name", m.name);
+    }
+    setIsSwitchMitraModalOpen(false);
+    showToast(`Beralih ke akun mitra: ${m.name}`);
   };
 
   // Sync listings with Supabase destinations table
@@ -455,7 +495,13 @@ export default function DashboardMitraPage() {
         <section className="bg-white border border-[#e8e2d9] rounded-3xl p-5 sm:p-7 shadow-sm mb-6 sm:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
           <div className="flex items-center gap-4 sm:gap-5">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#1a3a34] text-[#c29d59] border border-[#c29d59] flex items-center justify-center font-cinzel text-lg sm:text-xl font-bold shadow-sm shrink-0">
-              HR
+              {business.name
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((w: string) => w[0])
+                .join("")
+                .toUpperCase() || "MT"}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -466,9 +512,16 @@ export default function DashboardMitraPage() {
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                   {business.code}
                 </span>
+                <button
+                  onClick={() => setIsSwitchMitraModalOpen(true)}
+                  className="px-2.5 py-0.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-bold tracking-wider transition-colors shadow-sm"
+                  title="Ganti Akun Mitra untuk Simulasi Multi-Mitra"
+                >
+                  Ganti Mitra (Demo)
+                </button>
               </div>
               <p className="text-[11.5px] sm:text-[12px] text-[#575e5b]">
-                Pemilik: {business.owner} • {business.regency}
+                Pemilik: <strong>{business.owner}</strong> • {business.regency}
               </p>
             </div>
           </div>
@@ -1290,6 +1343,90 @@ export default function DashboardMitraPage() {
           </div>
         </div>
       )}
+      {/* Switch Mitra Modal (Multi-Mitra Simulation) */}
+      {isSwitchMitraModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative animate-in fade-in zoom-in-95">
+            <button
+              onClick={() => setIsSwitchMitraModalOpen(false)}
+              className="p-1 rounded-full hover:bg-stone-100 text-stone-500 absolute top-5 right-5"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-2">
+              <Building2 className="w-5 h-5 text-[#c29d59]" />
+              <h3 className="font-newsreader text-xl font-bold text-[#1a3a34]">
+                Pilih Profil Mitra Usaha
+              </h3>
+            </div>
+            <p className="text-xs text-[#575e5b] mb-4">
+              Setiap mitra memiliki akses yang setara ke dashboard, saldo terpisah, dan alat scanner tiket gerbang BPODT.
+            </p>
+
+            <div className="space-y-2.5 max-h-[60vh] overflow-y-auto no-scrollbar">
+              {PRESET_MITRA_LIST.map((m) => {
+                const isSelected = m.code === business.code;
+                return (
+                  <button
+                    key={m.code}
+                    onClick={() => switchMitra(m)}
+                    className={`w-full p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 ${
+                      isSelected
+                        ? "bg-[#1a3a34] text-white border-[#1a3a34] shadow-md"
+                        : "bg-[#faf8f5] hover:bg-white border-[#e8e2d9] hover:border-[#c29d59] text-[#1a3a34]"
+                    }`}
+                  >
+                    <div>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider block ${
+                        isSelected ? "text-[#c29d59]" : "text-[#b8653a]"
+                      }`}>
+                        {m.category} • {m.regency}
+                      </span>
+                      <h4 className="font-semibold text-sm leading-snug">{m.name}</h4>
+                      <p className={`text-[11px] mt-0.5 ${isSelected ? "text-white/70" : "text-[#575e5b]"}`}>
+                        Pemilik: {m.owner} • {m.code}
+                      </p>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className={`text-[10px] block ${isSelected ? "text-white/60" : "text-[#575e5b]"}`}>
+                        Saldo Mitra:
+                      </span>
+                      <span className={`font-cinzel text-xs font-bold ${isSelected ? "text-[#c29d59]" : "text-[#1a3a34]"}`}>
+                        Rp {m.balance.toLocaleString("id-ID")}
+                      </span>
+                      {isSelected && (
+                        <span className="mt-1 inline-block text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+                          Sedang Aktif
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="pt-4 border-t border-[#e8e2d9] mt-4 flex items-center justify-between text-xs">
+              <Link
+                href="/mitra/daftar"
+                onClick={() => setIsSwitchMitraModalOpen(false)}
+                className="font-semibold text-[#b8653a] hover:underline"
+              >
+                + Daftarkan Usaha Mitra Baru
+              </Link>
+
+              <button
+                onClick={() => setIsSwitchMitraModalOpen(false)}
+                className="px-4 py-2 rounded-full bg-stone-200 hover:bg-stone-300 text-[#1a3a34] font-semibold text-xs"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

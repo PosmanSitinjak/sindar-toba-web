@@ -20,8 +20,10 @@ import {
   Check,
   Search,
   ExternalLink,
+  Building2,
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { PRESET_MITRA_LIST } from "@/lib/mitra";
 
 export default function MitraScanPage() {
   const [bookingCodeInput, setBookingCodeInput] = useState("");
@@ -33,10 +35,45 @@ export default function MitraScanPage() {
     message: string;
   } | null>(null);
 
+  const [currentMitra, setCurrentMitra] = useState({
+    name: "Homestay Rura Batak & Tour Samosir",
+    code: "MIT-BPODT-0482",
+    category: "Homestay & Penginapan",
+    owner: "Mangatur Sitinjak",
+  });
+  const [isSwitchLoketOpen, setIsSwitchLoketOpen] = useState(false);
+
   const [waitingTickets, setWaitingTickets] = useState<any[]>([]);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Sync active Mitra profile
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("sindar_current_mitra");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.name) {
+            setCurrentMitra(parsed);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  const switchLoket = (m: any) => {
+    setCurrentMitra(m);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sindar_role", "mitra");
+      localStorage.setItem("sindar_current_mitra", JSON.stringify(m));
+      localStorage.setItem("sindar_mitra_name", m.name);
+    }
+    setIsSwitchLoketOpen(false);
+  };
 
   // Load tickets that are waiting for check-in
   const loadWaitingTickets = () => {
@@ -235,13 +272,18 @@ export default function MitraScanPage() {
       ...target,
       status: "Selesai (Sudah Digunakan)",
       checkInTime: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB",
+      validatedBy: currentMitra.name,
+      mitraCode: currentMitra.code,
     };
 
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase
           .from("tickets")
-          .update({ status: "Selesai (Sudah Digunakan)" })
+          .update({
+            status: "Selesai (Sudah Digunakan)",
+            organizer_name: currentMitra.name,
+          })
           .eq("booking_code", cleanCode);
       } catch (err) {
         console.error("Supabase ticket status update error:", err);
@@ -257,11 +299,15 @@ export default function MitraScanPage() {
         );
         localStorage.setItem("sindar_purchased_tickets", JSON.stringify(updatedList));
 
-        // Update Escrow status in transactions
+        // Update Escrow status in transactions and credit to current active partner
         const storedTrx = JSON.parse(localStorage.getItem("sindar_transactions") || "[]");
         const updatedTrx = storedTrx.map((tx: any) =>
           tx.trxId?.includes(cleanCode) || tx.item?.includes(target.destination)
-            ? { ...tx, escrowStatus: "Siap Dicairkan ke Mitra" }
+            ? {
+                ...tx,
+                escrowStatus: "Siap Dicairkan ke Mitra",
+                partner: currentMitra.name,
+              }
             : tx
         );
         localStorage.setItem("sindar_transactions", JSON.stringify(updatedTrx));
@@ -301,11 +347,24 @@ export default function MitraScanPage() {
             <span>Kembali ke Dashboard Mitra</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[11px] sm:text-xs font-cinzel text-white/90 font-bold uppercase tracking-wider">
-              Gate Validation Online
-            </span>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setIsSwitchLoketOpen(true)}
+              className="text-right hidden sm:block hover:opacity-90 transition-opacity bg-black/25 px-3 py-1 rounded-xl border border-white/10"
+              title="Klik untuk mengganti akun mitra yang sedang bertugas di loket"
+            >
+              <span className="text-[9.5px] text-white/60 uppercase tracking-wider block">
+                Petugas Loket Aktif ▾
+              </span>
+              <span className="text-xs font-semibold text-[#c29d59] truncate max-w-[200px] block">
+                {currentMitra.name}
+              </span>
+            </button>
+
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[10.5px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-bold uppercase tracking-wider">Akses Gerbang Sah</span>
+            </div>
           </div>
         </div>
       </header>
@@ -313,16 +372,25 @@ export default function MitraScanPage() {
       {/* Main Scanner Section */}
       <main className="max-w-2xl w-full mx-auto px-4 py-6 sm:py-8 space-y-6 flex-grow flex flex-col justify-center">
         {/* Title & Badge */}
-        <div className="text-center space-y-1">
-          <span className="font-cinzel text-[10.5px] font-bold text-[#c29d59] tracking-[2.5px] uppercase block">
-            Alat Pengecekan Gerbang Geosite BPODT
-          </span>
+        <div className="text-center space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-[#c29d59]/40 text-[#c29d59] text-[10.5px] font-bold tracking-widest uppercase mb-0.5">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Hak Akses Loket Setara Seluruh Mitra BPODT</span>
+          </div>
           <h1 className="font-newsreader text-2xl sm:text-3xl font-bold text-white tracking-tight">
             Scanner E-Tiket & Verifikasi Kedatangan
           </h1>
           <p className="text-xs text-white/75 max-w-md mx-auto">
-            Pindai QR code tiket wisatawan atau masukkan kode booking untuk konfirmasi kedatangan dan pencairan dana escrow.
+            Petugas Loket: <strong className="text-white">{currentMitra.name}</strong> ({currentMitra.code})
           </p>
+          <div className="sm:hidden pt-0.5">
+            <button
+              onClick={() => setIsSwitchLoketOpen(true)}
+              className="text-[11px] text-[#c29d59] underline font-semibold"
+            >
+              Ganti Akun Mitra Bertugas (Demo Multi-Mitra)
+            </button>
+          </div>
         </div>
 
         {/* Viewport Scanner Card */}
@@ -543,12 +611,17 @@ export default function MitraScanPage() {
                   )}
 
                   {/* Escrow Released Badge */}
-                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs flex items-center justify-between font-semibold">
-                    <span className="flex items-center gap-1.5">
-                      <Unlock className="w-4 h-4 text-emerald-700" />
-                      <span>Status Escrow BPODT:</span>
-                    </span>
-                    <span className="text-emerald-800 font-bold">Dana Siap Dicairkan ke Mitra</span>
+                  <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs space-y-1">
+                    <div className="flex items-center justify-between font-semibold">
+                      <span className="flex items-center gap-1.5">
+                        <Unlock className="w-4 h-4 text-emerald-700" />
+                        <span>Status Escrow BPODT:</span>
+                      </span>
+                      <span className="text-emerald-800 font-bold">Dana Siap Dicairkan ke Mitra</span>
+                    </div>
+                    <div className="text-[11px] text-emerald-800/80 pt-1 border-t border-emerald-200">
+                      Divalidasi oleh: <strong>{currentMitra.name}</strong> ({currentMitra.code})
+                    </div>
                   </div>
 
                   <button
@@ -599,6 +672,73 @@ export default function MitraScanPage() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Modal Ganti Petugas Loket (Multi-Mitra) */}
+        {isSwitchLoketOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-[#1a3a34] border border-[#c29d59]/50 rounded-3xl max-w-md w-full p-6 text-white shadow-2xl relative animate-in zoom-in-95">
+              <button
+                onClick={() => setIsSwitchLoketOpen(false)}
+                className="p-1 rounded-full hover:bg-white/10 text-white/70 absolute top-5 right-5"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 className="w-5 h-5 text-[#c29d59]" />
+                <h3 className="font-newsreader text-xl font-bold text-white">
+                  Ganti Akun Mitra Bertugas
+                </h3>
+              </div>
+              <p className="text-xs text-white/70 mb-4">
+                Pilih profil mitra untuk mensimulasikan bahwa seluruh mitra memiliki wewenang yang sama di pintu gerbang.
+              </p>
+
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto no-scrollbar">
+                {PRESET_MITRA_LIST.map((m) => {
+                  const isSelected = m.code === currentMitra.code;
+                  return (
+                    <button
+                      key={m.code}
+                      onClick={() => switchLoket(m)}
+                      className={`w-full p-3 rounded-2xl border text-left transition-all flex items-center justify-between ${
+                        isSelected
+                          ? "bg-[#c29d59] text-[#1a3a34] border-[#c29d59] font-semibold shadow-md"
+                          : "bg-black/30 border-white/10 hover:border-[#c29d59] hover:bg-white/10 text-white"
+                      }`}
+                    >
+                      <div>
+                        <span className={`text-[9.5px] font-bold uppercase tracking-wider block ${
+                          isSelected ? "text-[#1a3a34]" : "text-[#c29d59]"
+                        }`}>
+                          {m.category} • {m.regency}
+                        </span>
+                        <div className="text-xs font-semibold">{m.name}</div>
+                        <span className={`text-[10px] ${isSelected ? "text-[#1a3a34]/80" : "text-white/60"}`}>
+                          {m.code}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#1a3a34] text-[#c29d59]">
+                          Aktif
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-3 border-t border-white/10 mt-3 flex justify-end">
+                <button
+                  onClick={() => setIsSwitchLoketOpen(false)}
+                  className="px-4 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-semibold"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
         )}

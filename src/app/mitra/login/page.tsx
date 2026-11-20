@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   MessageCircle,
 } from "lucide-react";
+import { PRESET_MITRA_LIST, MitraProfile } from "@/lib/mitra";
 
 export default function MitraLoginPage() {
   const router = useRouter();
@@ -21,13 +22,48 @@ export default function MitraLoginPage() {
   const [password, setPassword] = useState("••••••••••••");
   const [partnerCode, setPartnerCode] = useState("MIT-BPODT-0482");
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const loginWithMitra = (mitraObj: MitraProfile | any) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("sindar_role", "mitra");
-      localStorage.setItem("sindar_mitra_name", "Homestay Rura Batak");
+      localStorage.setItem("sindar_current_mitra", JSON.stringify(mitraObj));
+      localStorage.setItem("sindar_mitra_name", mitraObj.name);
     }
     router.push("/mitra/dashboard");
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const matched = PRESET_MITRA_LIST.find(
+      (m) =>
+        m.email.toLowerCase() === identifier.toLowerCase() ||
+        m.code.toLowerCase() === partnerCode.toLowerCase()
+    );
+
+    if (matched) {
+      loginWithMitra(matched);
+      return;
+    }
+
+    // Custom mitra object
+    const cleanName = identifier.includes("@")
+      ? identifier.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : identifier || "Mitra Usaha Kaldera";
+
+    const customMitra = {
+      name: cleanName.includes("Homestay") ? "Homestay Rura Batak & Tour Samosir" : cleanName,
+      owner: "Pelaku Usaha Terverifikasi",
+      regency: "Kabupaten Samosir",
+      code: partnerCode || `MIT-BPODT-${Math.floor(1000 + Math.random() * 9000)}`,
+      category: "Layanan Wisata Kaldera",
+      verifiedDate: "Terverifikasi 2026",
+      bank: "Bank Sumut",
+      accountNumber: "102.02.04.098124-1",
+      accountHolder: cleanName,
+      email: identifier,
+      balance: 4500000,
+    };
+
+    loginWithMitra(customMitra);
   };
 
   return (
@@ -139,6 +175,27 @@ export default function MitraLoginPage() {
               <ArrowRight className="w-4 h-4 text-[#c29d59]" />
             </button>
           </form>
+
+          {/* Quick Multi-Mitra Selector for Testing & Demo */}
+          <div className="mt-5 p-3.5 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9] space-y-2">
+            <span className="text-[10px] font-bold text-[#b8653a] uppercase tracking-wider block text-center">
+              Akses Cepat Pengujian Beragam Mitra (Multi-Mitra)
+            </span>
+            <div className="grid grid-cols-2 gap-1.5">
+              {PRESET_MITRA_LIST.map((m) => (
+                <button
+                  key={m.code}
+                  onClick={() => loginWithMitra(m)}
+                  type="button"
+                  className="p-2 rounded-xl bg-white border border-[#e8e2d9] hover:border-[#c29d59] hover:bg-stone-50 text-left transition-all text-[11px] shadow-sm flex flex-col justify-between"
+                  title={`Masuk sebagai ${m.name}`}
+                >
+                  <strong className="text-[#1a3a34] truncate block">{m.name.split("&")[0]}</strong>
+                  <span className="text-[9.5px] text-[#575e5b] font-mono">{m.code}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Divider */}
           <div className="my-6 pt-5 border-t border-[#e8e2d9] text-center">
