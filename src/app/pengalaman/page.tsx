@@ -54,7 +54,7 @@ export default function PengalamanPage() {
       price: "220.000",
       rating: 4.9,
       reviews: 215,
-      image: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=80",
+      image: "/images/destinations/kopi-lintong.jpg",
       desc: "Menyusuri kebun kopi vulkanik di ketinggian 1.400 mdpl, memetik ceri kopi merah, memahami proses giling basah (wet-hulled), serta teknik sangrai khas Batak.",
       highlights: [
         "Sesi cupping 3 varietas kopi Arabika Lintong",
@@ -72,7 +72,7 @@ export default function PengalamanPage() {
       price: "250.000",
       rating: 4.8,
       reviews: 480,
-      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
+      image: "/images/destinations/bukit-holbung.jpg",
       desc: "Mengarungi danau vulkanik hening saat kabut pagi merekah dengan perahu kayu bertatahkan ornamen Gorga Batak menuju teluk-teluk tersembunyi.",
       highlights: [
         "Perahu kayu tradisional berstandar pelampung",
@@ -90,7 +90,7 @@ export default function PengalamanPage() {
       price: "190.000",
       rating: 4.9,
       reviews: 190,
-      image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=800&q=80",
+      image: "/images/destinations/lembah-bakkara.jpg",
       desc: "Mengenal 'merica Batak' andaliman yang memberikan sensasi getir segar khas, dipadukan kecombrang dan asam gelugur untuk meracik Ikan Mas Arsik otentik.",
       highlights: [
         "Bahan baku segar dari pasar tradisional Balige",

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
   Clock,
   Users,
@@ -16,6 +17,16 @@ import {
   ArrowLeft,
   Share2,
   Heart,
+  QrCode,
+  Building2,
+  CreditCard,
+  Lock,
+  Copy,
+  Sparkles,
+  X,
+  RefreshCw,
+  Check,
+  ExternalLink,
 } from "lucide-react";
 
 export default function DetailPengalamanPage({ params }: { params: { id: string } }) {
@@ -33,7 +44,7 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
       rating: 4.9,
       reviews: 215,
       host: "Kelompok Tani Kopi Organik Lintong",
-      image: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1200&q=80",
+      image: "/images/destinations/kopi-lintong.jpg",
       desc: "Menyusuri kebun kopi vulkanik di ketinggian 1.400 mdpl, memetik ceri kopi merah, memahami proses giling basah (wet-hulled), serta teknik sangrai khas Batak.",
       itinerary: [
         { time: "09:00 - 10:00", title: "Menyusuri Kebun Kopi Vulkanik", desc: "Berjalan di antara pohon kopi Arabika varietas Lasuna & Sigarar Utang, mengenal karakteristik tanah andosol kaldera." },
@@ -82,7 +93,7 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
       rating: 4.8,
       reviews: 480,
       host: "Komunitas Nahkoda Solu Bolon Toba",
-      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
+      image: "/images/destinations/bukit-holbung.jpg",
       desc: "Mengarungi danau vulkanik hening saat kabut pagi merekah dengan perahu kayu bertatahkan ornamen Gorga Batak menuju teluk-teluk tersembunyi.",
       itinerary: [
         { time: "08:00 - 08:30", title: "Briefing & Doa Keberangkatan", desc: "Penjelasan rute teluk dan pengenaan pelampung keselamatan." },
@@ -105,7 +116,7 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
       rating: 4.9,
       reviews: 190,
       host: "Dapur Rempah Pusaka Balige",
-      image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1200&q=80",
+      image: "/images/destinations/lembah-bakkara.jpg",
       desc: "Mengenal 'merica Batak' andaliman yang memberikan sensasi getir segar khas, dipadukan kecombrang dan asam gelugur untuk meracik Ikan Mas Arsik otentik.",
       itinerary: [
         { time: "10:00 - 10:45", title: "Mengenal 12 Rempah Khas Batak", desc: "Mencium dan mencicipi andaliman mentah, unte jungga, dan asam cikala." },
@@ -123,10 +134,103 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
   const exp = experiencesData[params.id] || experiencesData["kopi-lintong"];
   const totalCost = exp.price * participants;
 
+  // Payment Gateway Modal States
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<"method" | "pay" | "success">("method");
+  const [selectedMethod, setSelectedMethod] = useState<"qris" | "va_sumut" | "va_mandiri" | "va_bca">("qris");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [issuedTicket, setIssuedTicket] = useState<any | null>(null);
+  const [vaCopied, setVaCopied] = useState(false);
+
   const handleBooking = () => {
-    alert(
-      `Reservasi Berhasil!\n\nAktivitas: ${exp.title}\nTanggal: ${selectedDate}\nPeserta: ${participants} Orang\nTotal: Rp ${totalCost.toLocaleString("id-ID")}\n\nE-Tiket konfirmasi telah diterbitkan ke Dashboard Wisatawan Anda.`
-    );
+    setIsPaymentModalOpen(true);
+    setPaymentStep("method");
+  };
+
+  const handleConfirmPayment = async () => {
+    setIsProcessingPayment(true);
+
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const bookingCode = `ST-${new Date().getFullYear()}-${randomSuffix}`;
+    const ticketId = `TKT-${Date.now().toString().slice(-6)}`;
+
+    const channelLabel =
+      selectedMethod === "qris"
+        ? "QRIS Dinamis"
+        : selectedMethod === "va_sumut"
+        ? "VA Bank Sumut"
+        : selectedMethod === "va_mandiri"
+        ? "VA Bank Mandiri"
+        : "VA Bank BCA";
+
+    const newTicket = {
+      id: ticketId,
+      bookingCode: bookingCode,
+      destination: exp.title,
+      geosite: exp.category || "Pengalaman Budaya",
+      date: selectedDate,
+      time: exp.duration || "09:00 WIB",
+      visitors: `${participants} Peserta`,
+      addons: ["Termasuk Fasilitas & Pemandu"],
+      totalPaid: `Rp ${totalCost.toLocaleString("id-ID")}`,
+      status: "Lunas (Siap Digunakan)",
+      location: exp.location,
+      organizerPhone: "6281234567890",
+      organizerName: exp.host || "Mitra Pengalaman Toba",
+      paymentChannel: channelLabel,
+      purchasedAt: new Date().toISOString(),
+    };
+
+    const newTrx = {
+      trxId: `TRX-${bookingCode}`,
+      traveler: "Christofer Sitinjak",
+      item: `${participants}x ${exp.title}`,
+      amount: `Rp ${totalCost.toLocaleString("id-ID")}`,
+      channel: channelLabel,
+      escrowStatus: "Tertahan di Escrow",
+      time: "Baru saja",
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from("tickets").insert({
+          id: ticketId,
+          booking_code: bookingCode,
+          destination_id: params.id,
+          destination_name: exp.title,
+          geosite_label: exp.category,
+          visit_date: selectedDate,
+          visit_time: exp.duration || "09:00 WIB",
+          visitors: participants,
+          addons: ["Fasilitas Lengkap"],
+          total_paid: totalCost,
+          status: "Lunas (Siap Digunakan)",
+          location: exp.location,
+          organizer_name: exp.host,
+          organizer_phone: "6281234567890",
+        });
+      } catch (err) {
+        console.error("Supabase insert error:", err);
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const storedTkt = JSON.parse(localStorage.getItem("sindar_purchased_tickets") || "[]");
+        localStorage.setItem("sindar_purchased_tickets", JSON.stringify([newTicket, ...storedTkt]));
+
+        const storedTrx = JSON.parse(localStorage.getItem("sindar_transactions") || "[]");
+        localStorage.setItem("sindar_transactions", JSON.stringify([newTrx, ...storedTrx]));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      setIssuedTicket(newTicket);
+      setPaymentStep("success");
+    }, 1200);
   };
 
   return (
@@ -334,6 +438,368 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
             <ArrowRight className="w-3.5 h-3.5 text-[#c29d59]" />
           </button>
         </div>
+
+        {/* MODAL PEMBAYARAN INTERAKTIF PENGALAMAN (CHECKOUT GATEWAY FOR TESTING & DEMO) */}
+        {isPaymentModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+            <div className="bg-[#faf8f5] rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-[#c29d59]/50 overflow-hidden text-[#1a3a34] max-h-[92vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-3.5 border-b border-[#e8e2d9] mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-[#1a3a34] text-[#c29d59] font-cinzel font-bold text-[11px] flex items-center justify-center border border-[#c29d59]">
+                    ST
+                  </div>
+                  <div>
+                    <span className="font-cinzel text-xs font-bold text-[#1a3a34] tracking-wider block">
+                      GATEWAY PEMBAYARAN SINDAR TOBA
+                    </span>
+                    <span className="text-[9.5px] text-[#575e5b] uppercase tracking-wider">
+                      BPODT Escrow Protection • Mode Testing Aktif
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsPaymentModalOpen(false)}
+                  className="p-1 rounded-full hover:bg-stone-200 text-stone-500 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Progress Steps Indicator */}
+              <div className="grid grid-cols-3 gap-2 mb-5 text-[10px] sm:text-[11px] font-semibold text-center uppercase tracking-wider">
+                <div className={`pb-1.5 border-b-2 transition-all ${paymentStep === "method" ? "border-[#1a3a34] text-[#1a3a34] font-bold" : "border-emerald-700 text-emerald-800"}`}>
+                  1. Metode Bayar
+                </div>
+                <div className={`pb-1.5 border-b-2 transition-all ${paymentStep === "pay" ? "border-[#1a3a34] text-[#1a3a34] font-bold" : paymentStep === "success" ? "border-emerald-700 text-emerald-800" : "border-stone-300 text-stone-400"}`}>
+                  2. Selesaikan Bayar
+                </div>
+                <div className={`pb-1.5 border-b-2 transition-all ${paymentStep === "success" ? "border-emerald-700 text-emerald-800 font-bold" : "border-stone-300 text-stone-400"}`}>
+                  3. E-Tiket Terbit
+                </div>
+              </div>
+
+              {/* STEP 1: PILIH METODE PEMBAYARAN */}
+              {paymentStep === "method" && (
+                <div className="space-y-4">
+                  <div className="p-3.5 rounded-2xl bg-white border border-[#e8e2d9] space-y-1 text-xs">
+                    <div className="flex justify-between font-semibold text-[#1a3a34]">
+                      <span>{exp.title}</span>
+                      <span>Rp {totalCost.toLocaleString("id-ID")}</span>
+                    </div>
+                    <div className="flex justify-between text-[#575e5b] text-[11px]">
+                      <span>{selectedDate} • {participants} Peserta</span>
+                      <span>{exp.category}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#575e5b] block mb-2">
+                      Pilih Kanal Pembayaran Resmi:
+                    </label>
+
+                    <div className="space-y-2.5">
+                      <label
+                        onClick={() => setSelectedMethod("qris")}
+                        className={`p-3.5 rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all ${
+                          selectedMethod === "qris"
+                            ? "bg-white border-[#1a3a34] shadow-sm"
+                            : "bg-white/60 border-[#e8e2d9] hover:border-stone-400"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-red-50 text-red-700 flex items-center justify-center font-bold text-xs border border-red-200">
+                            <QrCode className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-xs text-[#1a3a34]">QRIS Dinamis</span>
+                              <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                                Rekomendasi Instan
+                              </span>
+                            </div>
+                            <span className="text-[10.5px] text-[#575e5b] block">
+                              GoPay, OVO, Dana, ShopeePay, BCA Mobile & Semua M-Banking
+                            </span>
+                          </div>
+                        </div>
+                        <input
+                          type="radio"
+                          name="expPaymentMethod"
+                          checked={selectedMethod === "qris"}
+                          onChange={() => setSelectedMethod("qris")}
+                          className="accent-[#1a3a34]"
+                        />
+                      </label>
+
+                      <label
+                        onClick={() => setSelectedMethod("va_sumut")}
+                        className={`p-3.5 rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all ${
+                          selectedMethod === "va_sumut"
+                            ? "bg-white border-[#1a3a34] shadow-sm"
+                            : "bg-white/60 border-[#e8e2d9] hover:border-stone-400"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs border border-amber-200 font-cinzel">
+                            BS
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-xs text-[#1a3a34]">Virtual Account Bank Sumut</span>
+                              <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold">
+                                Bank Daerah Sumut
+                              </span>
+                            </div>
+                            <span className="text-[10.5px] text-[#575e5b] block">
+                              Verifikasi Otomatis 24 Jam Tanpa Bukti Transfer
+                            </span>
+                          </div>
+                        </div>
+                        <input
+                          type="radio"
+                          name="expPaymentMethod"
+                          checked={selectedMethod === "va_sumut"}
+                          onChange={() => setSelectedMethod("va_sumut")}
+                          className="accent-[#1a3a34]"
+                        />
+                      </label>
+
+                      <label
+                        onClick={() => setSelectedMethod("va_mandiri")}
+                        className={`p-3.5 rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all ${
+                          selectedMethod === "va_mandiri"
+                            ? "bg-white border-[#1a3a34] shadow-sm"
+                            : "bg-white/60 border-[#e8e2d9] hover:border-stone-400"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-800 flex items-center justify-center font-bold text-xs border border-blue-200">
+                            <Building2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-xs text-[#1a3a34] block">
+                              Virtual Account Bank Mandiri
+                            </span>
+                            <span className="text-[10.5px] text-[#575e5b] block">
+                              Livin&apos; by Mandiri & ATM Mandiri
+                            </span>
+                          </div>
+                        </div>
+                        <input
+                          type="radio"
+                          name="expPaymentMethod"
+                          checked={selectedMethod === "va_mandiri"}
+                          onChange={() => setSelectedMethod("va_mandiri")}
+                          className="accent-[#1a3a34]"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-emerald-900 flex items-start gap-2.5 text-[11px] leading-relaxed">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block font-semibold">Jaminan Keamanan Escrow BPODT:</strong>
+                      Dana Anda ditampung di rekening bersama resmi SINDAR TOBA dan baru diteruskan ke pemandu/mitra setelah sesi selesai.
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setPaymentStep("pay")}
+                    className="w-full py-3.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <span>Lanjutkan Pembayaran (Rp {totalCost.toLocaleString("id-ID")})</span>
+                    <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+                  </button>
+                </div>
+              )}
+
+              {/* STEP 2: INSTRUKSI PEMBAYARAN & TESTING SIMULATOR */}
+              {paymentStep === "pay" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => setPaymentStep("method")}
+                      className="text-xs text-[#575e5b] hover:text-[#1a3a34] flex items-center gap-1 font-semibold"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Ganti Metode</span>
+                    </button>
+                    <div className="flex items-center gap-1 text-[11px] text-amber-700 font-mono font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                      <Clock className="w-3 h-3 text-amber-600" />
+                      <span>Sisa Waktu: 14:48</span>
+                    </div>
+                  </div>
+
+                  {selectedMethod === "qris" ? (
+                    <div className="bg-white rounded-3xl p-5 border border-[#e8e2d9] shadow-sm text-center space-y-3">
+                      <div className="flex items-center justify-center gap-1.5 pb-2 border-b border-[#e8e2d9]">
+                        <span className="font-bold text-xs tracking-widest text-[#1a3a34]">QRIS DINAMIS</span>
+                        <span className="text-[10px] text-[#575e5b]">• Standar Pembayaran Nasional</span>
+                      </div>
+
+                      <div className="w-48 h-48 mx-auto bg-stone-50 rounded-2xl p-3 border-2 border-dashed border-[#1a3a34] flex flex-col items-center justify-center relative shadow-inner">
+                        <QrCode className="w-36 h-36 text-[#1a3a34]" />
+                        <span className="text-[9px] font-mono text-[#575e5b] mt-1">SINDAR TOBA - PENGALAMAN</span>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <span className="text-[11px] text-[#575e5b]">Total Tagihan Sesi:</span>
+                        <div className="font-cinzel text-2xl font-bold text-[#1a3a34]">
+                          Rp {totalCost.toLocaleString("id-ID")}
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-[#575e5b] leading-relaxed">
+                        Buka aplikasi GoPay, OVO, Dana, ShopeePay, atau mobile banking Anda dan pindai kode QR di atas.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-3xl p-5 border border-[#e8e2d9] shadow-sm space-y-3.5">
+                      <div className="flex items-center justify-between pb-2 border-b border-[#e8e2d9]">
+                        <span className="font-bold text-xs text-[#1a3a34]">
+                          {selectedMethod === "va_sumut" ? "Bank Sumut Virtual Account" : "Bank Mandiri Virtual Account"}
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          Otomatis Terverifikasi
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[11px] text-[#575e5b] block">Nomor Virtual Account:</span>
+                        <div className="flex items-center justify-between p-3 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9]">
+                          <span className="font-mono text-base font-bold text-[#1a3a34] tracking-wider">
+                            {selectedMethod === "va_sumut" ? "102 889 0481 9281" : "8890 8123 4567 8901"}
+                          </span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(selectedMethod === "va_sumut" ? "10288904819281" : "8890812345678901");
+                              setVaCopied(true);
+                              setTimeout(() => setVaCopied(false), 2000);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-white border border-[#e8e2d9] text-[11px] font-semibold text-[#1a3a34] hover:bg-slate-50 flex items-center gap-1"
+                          >
+                            {vaCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{vaCopied ? "Tersalin!" : "Salin"}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[#575e5b]">Total Tagihan:</span>
+                        <span className="font-bold text-[#1a3a34] font-cinzel text-base">
+                          Rp {totalCost.toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-[#1a3a34] space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-700" />
+                      <span className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                        Fitur Pengujian & Demo Berjalan:
+                      </span>
+                    </div>
+                    <p className="text-[11.5px] text-[#575e5b] leading-relaxed">
+                      Klik tombol di bawah ini untuk mensimulasikan konfirmasi pembayaran instan dari bank saat demo berlangsung.
+                    </p>
+
+                    <button
+                      onClick={handleConfirmPayment}
+                      disabled={isProcessingPayment}
+                      className="w-full py-3 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                    >
+                      {isProcessingPayment ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Memverifikasi Gateway Bank...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                          <span>Simulasikan Pembayaran Sukses (Testing Mode)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: E-TIKET PENGALAMAN TERBIT */}
+              {paymentStep === "success" && issuedTicket && (
+                <div className="space-y-4 text-center">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center border-2 border-emerald-300 shadow-md animate-bounce">
+                    <CheckCircle2 className="w-9 h-9" />
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest block mb-0.5">
+                      Reservasi Selesai & Lunas
+                    </span>
+                    <h3 className="font-newsreader text-2xl font-bold text-[#1a3a34]">
+                      Pendaftaran Sesi Berhasil!
+                    </h3>
+                    <p className="text-xs text-[#575e5b] mt-1">
+                      E-Tiket resmi telah diterbitkan dan tersimpan di database Supabase Cloud.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-3xl bg-white border border-[#e8e2d9] shadow-sm text-left space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-[#e8e2d9]">
+                      <div>
+                        <span className="text-[9.5px] text-[#575e5b] uppercase tracking-wider block">Kode Booking</span>
+                        <span className="font-mono text-sm font-bold text-[#b8653a]">
+                          {issuedTicket.bookingCode}
+                        </span>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        {issuedTicket.status}
+                      </span>
+                    </div>
+
+                    <div className="text-xs space-y-1">
+                      <div className="font-semibold text-sm text-[#1a3a34]">
+                        {issuedTicket.destination}
+                      </div>
+                      <div className="text-[#575e5b] text-[11.5px]">
+                        Jadwal: <strong>{issuedTicket.date}</strong> ({issuedTicket.visitors})
+                      </div>
+                      <div className="text-[#1a3a34] font-bold text-xs pt-1">
+                        Total Biaya: {issuedTicket.totalPaid} ({issuedTicket.paymentChannel})
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] flex items-center justify-between text-[11px]">
+                      <span className="text-[#575e5b]">Status Dana di Escrow:</span>
+                      <span className="font-bold text-emerald-800 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-emerald-700" /> Diamankan BPODT
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <Link
+                      href="/dashboard"
+                      className="w-full py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+                    >
+                      <span>Buka E-Tiket di Dashboard Saya</span>
+                      <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+                    </Link>
+
+                    <button
+                      onClick={() => setIsPaymentModalOpen(false)}
+                      className="text-xs text-[#575e5b] hover:text-[#1a3a34] pt-1 block mx-auto"
+                    >
+                      Selesai & Tutup Jendela Ini
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       <Footer />
