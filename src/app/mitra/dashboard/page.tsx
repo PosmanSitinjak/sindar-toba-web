@@ -24,6 +24,8 @@ import {
   FileText,
   Trash2,
   Database,
+  QrCode,
+  Camera,
 } from "lucide-react";
 
 interface ListingItem {
@@ -392,6 +394,44 @@ export default function DashboardMitraPage() {
     }
   }, []);
 
+  // Handle direct check-in of guest from dashboard
+  const handleCheckInGuest = async (code: string) => {
+    setRecentBookings((prev) =>
+      prev.map((b) => (b.code === code ? { ...b, status: "Selesai (Sudah Hadir)" } : b))
+    );
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase
+          .from("tickets")
+          .update({ status: "Selesai (Sudah Digunakan)" })
+          .eq("booking_code", code);
+      } catch (err) {
+        console.error("Supabase check-in error:", err);
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const storedTkt = JSON.parse(localStorage.getItem("sindar_purchased_tickets") || "[]");
+        const updatedTkt = storedTkt.map((t: any) =>
+          t.bookingCode === code ? { ...t, status: "Selesai (Sudah Digunakan)" } : t
+        );
+        localStorage.setItem("sindar_purchased_tickets", JSON.stringify(updatedTkt));
+
+        const storedTrx = JSON.parse(localStorage.getItem("sindar_transactions") || "[]");
+        const updatedTrx = storedTrx.map((tx: any) =>
+          tx.trxId?.includes(code) ? { ...tx, escrowStatus: "Siap Dicairkan ke Mitra" } : tx
+        );
+        localStorage.setItem("sindar_transactions", JSON.stringify(updatedTrx));
+      } catch (e) {
+        console.error("LocalStorage write error:", e);
+      }
+    }
+
+    showToast(`Tamu (${code}) BERHASIL check-in! Status Escrow BPODT cair ke rekening Anda.`);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-[#faf8f5] text-[#1a3a34]">
       <Navbar />
@@ -434,7 +474,7 @@ export default function DashboardMitraPage() {
           </div>
 
           {/* Quick Balance & Payout Box */}
-          <div className="flex items-center justify-between sm:justify-start gap-4 bg-[#faf8f5] border border-[#e8e2d9] p-3.5 sm:p-4 rounded-2xl">
+          <div className="flex flex-wrap items-center justify-between sm:justify-start gap-3 bg-[#faf8f5] border border-[#e8e2d9] p-3.5 sm:p-4 rounded-2xl">
             <div>
               <span className="text-[10px] text-[#575e5b] uppercase tracking-wider block font-semibold">
                 Saldo Siap Tarik
@@ -443,15 +483,27 @@ export default function DashboardMitraPage() {
                 Rp {balance.toLocaleString("id-ID")}
               </span>
             </div>
-            <button
-              onClick={() => {
-                setWithdrawAmount(balance.toString());
-                setIsWithdrawModalOpen(true);
-              }}
-              className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[11.5px] font-semibold uppercase tracking-wider transition-colors shadow-sm active:scale-95"
-            >
-              Tarik Dana
-            </button>
+
+            <div className="flex items-center gap-2">
+              <Link
+                href="/mitra/scan"
+                className="px-3.5 py-2 rounded-xl bg-[#1a3a34] hover:bg-[#122a25] text-[#c29d59] border border-[#c29d59] text-[11px] sm:text-[11.5px] font-semibold uppercase tracking-wider transition-colors shadow-sm flex items-center gap-1.5 active:scale-95"
+                title="Buka Scanner Pintu Masuk / Gate Validation"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Scanner Tiket</span>
+              </Link>
+
+              <button
+                onClick={() => {
+                  setWithdrawAmount(balance.toString());
+                  setIsWithdrawModalOpen(true);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] sm:text-[11.5px] font-semibold uppercase tracking-wider transition-colors shadow-sm active:scale-95"
+              >
+                Tarik Dana
+              </button>
+            </div>
           </div>
         </section>
 
@@ -538,17 +590,34 @@ export default function DashboardMitraPage() {
                           {bk.status}
                         </span>
                       </div>
-                      <a
-                        href={`https://wa.me/${bk.phone}?text=Halo%20${encodeURIComponent(
-                          bk.guest
-                        )},%20kami%20dari%20Homestay%20Rura%20Batak`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-2 sm:p-2.5 rounded-xl bg-white border border-[#e8e2d9] hover:bg-emerald-50 text-emerald-700 transition-colors"
-                        title="Chat Tamu via WA"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </a>
+                      <div className="flex items-center gap-2">
+                        {!bk.status.toLowerCase().includes("selesai") ? (
+                          <button
+                            onClick={() => handleCheckInGuest(bk.code)}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[10.5px] font-semibold flex items-center gap-1 shadow-sm active:scale-95 transition-colors"
+                            title="Konfirmasi Check-In Tamu Hadir"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Check-In</span>
+                          </button>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                            Hadir
+                          </span>
+                        )}
+
+                        <a
+                          href={`https://wa.me/${bk.phone}?text=Halo%20${encodeURIComponent(
+                            bk.guest
+                          )},%20kami%20dari%20Homestay%20Rura%20Batak`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 sm:p-2 rounded-xl bg-white border border-[#e8e2d9] hover:bg-emerald-50 text-emerald-700 transition-colors"
+                          title="Chat Tamu via WA"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 ))}

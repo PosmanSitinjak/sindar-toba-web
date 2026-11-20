@@ -25,6 +25,7 @@ import {
   MapPin,
   Tag,
   Check,
+  Camera,
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { fallbackDestinations } from "@/lib/destinations";
@@ -400,6 +401,15 @@ export default function SuperadminDashboardPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <Link
+                href="/mitra/scan"
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-[#122a25] hover:bg-[#0c1f1b] border border-[#c29d59]/60 text-[#c29d59] text-[11px] sm:text-[11.5px] font-medium transition-colors"
+                title="Buka Scanner Gerbang / Validasi Tiket"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Scanner Gerbang</span>
+              </Link>
+
               <span className="text-white/70 hidden sm:inline">
                 Admin: <strong>Christofer</strong>
               </span>

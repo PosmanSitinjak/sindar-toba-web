@@ -448,7 +448,14 @@ export default function DashboardWisatawanPage() {
                           {tkt.bookingCode}
                         </span>
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10.5px] font-semibold">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full border text-[10.5px] font-semibold ${
+                          tkt.status?.toLowerCase().includes("selesai") ||
+                          tkt.status?.toLowerCase().includes("digunakan")
+                            ? "bg-stone-100 border-stone-300 text-stone-600 font-bold"
+                            : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                        }`}
+                      >
                         {tkt.status}
                       </span>
                     </div>
@@ -1087,56 +1094,78 @@ export default function DashboardWisatawanPage() {
         </section>
 
         {/* QR Code Modal Popup (Mobile Responsive) */}
-        {showQrModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-xs sm:max-w-sm w-full p-6 sm:p-8 text-center shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-              <span className="font-cinzel text-[10.5px] font-bold text-[#c29d59] uppercase tracking-wider block mb-1">
-                Verifikasi Geosite Resmi
-              </span>
-              <h3 className="font-newsreader text-xl sm:text-2xl font-bold text-[#1a3a34] mb-1.5">
-                QR Code E-Tiket
-              </h3>
-              <p className="text-[11.5px] sm:text-[12px] text-[#575e5b] mb-4 sm:mb-6">
-                Scan kode ini di pintu masuk geosite untuk konfirmasi kedatangan.
-              </p>
+        {showQrModal && (() => {
+          const matchedTicket = activeTickets.find((t) => t.bookingCode === showQrModal);
+          const isUsed =
+            matchedTicket?.status?.toLowerCase().includes("selesai") ||
+            matchedTicket?.status?.toLowerCase().includes("digunakan");
 
-              {/* High-res SVG QR Mockup */}
-              <div className="w-44 h-44 sm:w-48 sm:h-48 mx-auto bg-white p-3 rounded-2xl border-2 border-[#1a3a34] flex items-center justify-center shadow-inner mb-4">
-                <svg className="w-full h-full text-[#1a3a34]" viewBox="0 0 100 100" fill="currentColor">
-                  <rect x="5" y="5" width="25" height="25" rx="3" fill="none" stroke="currentColor" strokeWidth="4" />
-                  <rect x="11" y="11" width="13" height="13" />
-                  <rect x="70" y="5" width="25" height="25" rx="3" fill="none" stroke="currentColor" strokeWidth="4" />
-                  <rect x="76" y="11" width="13" height="13" />
-                  <rect x="5" y="70" width="25" height="25" rx="3" fill="none" stroke="currentColor" strokeWidth="4" />
-                  <rect x="11" y="76" width="13" height="13" />
-                  <rect x="36" y="10" width="8" height="8" />
-                  <rect x="50" y="15" width="8" height="8" />
-                  <rect x="36" y="25" width="12" height="6" />
-                  <rect x="10" y="36" width="8" height="15" />
-                  <rect x="25" y="42" width="10" height="8" />
-                  <rect x="42" y="42" width="16" height="16" rx="2" fill="#c29d59" />
-                  <rect x="65" y="38" width="10" height="8" />
-                  <rect x="80" y="45" width="12" height="8" />
-                  <rect x="36" y="65" width="8" height="15" />
-                  <rect x="50" y="75" width="15" height="8" />
-                  <rect x="72" y="70" width="8" height="10" />
-                  <rect x="85" y="65" width="8" height="18" />
-                </svg>
+          return (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-xs sm:max-w-sm w-full p-6 sm:p-8 text-center shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+                <span className="font-cinzel text-[10.5px] font-bold text-[#c29d59] uppercase tracking-wider block mb-1">
+                  Verifikasi Geosite Resmi
+                </span>
+                <h3 className="font-newsreader text-xl sm:text-2xl font-bold text-[#1a3a34] mb-1.5">
+                  QR Code E-Tiket
+                </h3>
+                <p className="text-[11.5px] sm:text-[12px] text-[#575e5b] mb-4 sm:mb-6">
+                  {isUsed
+                    ? "Tiket ini telah divalidasi dan digunakan di pintu masuk geosite."
+                    : "Scan kode ini di pintu masuk geosite untuk konfirmasi kedatangan."}
+                </p>
+
+                {/* High-res SVG QR Mockup with Used Overlay if scanned */}
+                <div className="relative w-44 h-44 sm:w-48 sm:h-48 mx-auto bg-white p-3 rounded-2xl border-2 border-[#1a3a34] flex items-center justify-center shadow-inner mb-4">
+                  <svg
+                    className={`w-full h-full text-[#1a3a34] transition-opacity ${
+                      isUsed ? "opacity-25" : ""
+                    }`}
+                    viewBox="0 0 100 100"
+                    fill="currentColor"
+                  >
+                    <rect x="5" y="5" width="25" height="25" rx="3" fill="none" stroke="currentColor" strokeWidth="4" />
+                    <rect x="11" y="11" width="13" height="13" />
+                    <rect x="70" y="5" width="25" height="25" rx="3" fill="none" stroke="currentColor" strokeWidth="4" />
+                    <rect x="76" y="11" width="13" height="13" />
+                    <rect x="5" y="70" width="25" height="25" rx="3" fill="none" stroke="currentColor" strokeWidth="4" />
+                    <rect x="11" y="76" width="13" height="13" />
+                    <rect x="36" y="10" width="8" height="8" />
+                    <rect x="50" y="15" width="8" height="8" />
+                    <rect x="36" y="25" width="12" height="6" />
+                    <rect x="10" y="36" width="8" height="15" />
+                    <rect x="25" y="42" width="10" height="8" />
+                    <rect x="42" y="42" width="16" height="16" rx="2" fill="#c29d59" />
+                    <rect x="65" y="38" width="10" height="8" />
+                    <rect x="80" y="45" width="12" height="8" />
+                    <rect x="36" y="65" width="8" height="15" />
+                    <rect x="50" y="75" width="15" height="8" />
+                    <rect x="72" y="70" width="8" height="10" />
+                    <rect x="85" y="65" width="8" height="18" />
+                  </svg>
+                  {isUsed && (
+                    <div className="absolute inset-0 flex items-center justify-center p-2">
+                      <div className="bg-stone-900/95 border border-stone-500 text-stone-100 rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider rotate-[-12deg] shadow-2xl">
+                        Sudah Digunakan
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="font-mono text-xs font-bold text-[#1a3a34] bg-[#faf8f5] py-2 px-3 rounded-lg border border-[#e8e2d9] mb-5">
+                  {showQrModal}
+                </div>
+
+                <button
+                  onClick={() => setShowQrModal(null)}
+                  className="w-full py-2.5 sm:py-3 rounded-full bg-[#1a3a34] text-white text-[12px] font-semibold uppercase tracking-wider hover:bg-[#122a25] transition-colors"
+                >
+                  Tutup QR Code
+                </button>
               </div>
-
-              <div className="font-mono text-xs font-bold text-[#1a3a34] bg-[#faf8f5] py-2 px-3 rounded-lg border border-[#e8e2d9] mb-5">
-                {showQrModal}
-              </div>
-
-              <button
-                onClick={() => setShowQrModal(null)}
-                className="w-full py-2.5 sm:py-3 rounded-full bg-[#1a3a34] text-white text-[12px] font-semibold uppercase tracking-wider hover:bg-[#122a25] transition-colors"
-              >
-                Tutup QR Code
-              </button>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </main>
 
       <Footer />
