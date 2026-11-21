@@ -25,6 +25,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [authRole, setAuthRole] = useState<"guest" | "mitra" | "user">("guest");
   const [userName, setUserName] = useState("Wisatawan");
+  const [mitraName, setMitraName] = useState("Homestay Rura Batak");
   const pathname = usePathname();
   const router = useRouter();
 
@@ -38,12 +39,19 @@ export default function Navbar() {
 
   // Sync auth state based on current route or localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedName = localStorage.getItem("sindar_user_name");
-      if (storedName) setUserName(storedName);
-    }
+    const syncAuthData = () => {
+      if (typeof window !== "undefined") {
+        const storedName = localStorage.getItem("sindar_user_name");
+        if (storedName) setUserName(storedName);
 
-    if (pathname.startsWith("/mitra/dashboard")) {
+        const storedMitra = localStorage.getItem("sindar_mitra_name");
+        if (storedMitra) setMitraName(storedMitra);
+      }
+    };
+
+    syncAuthData();
+
+    if (pathname.startsWith("/mitra/dashboard") || pathname.startsWith("/mitra/scan")) {
       setAuthRole("mitra");
     } else if (pathname.startsWith("/dashboard")) {
       setAuthRole("user");
@@ -52,6 +60,15 @@ export default function Navbar() {
       if (stored === "mitra") setAuthRole("mitra");
       else if (stored === "user") setAuthRole("user");
       else setAuthRole("guest");
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("sindar_mitra_changed", syncAuthData);
+      window.addEventListener("storage", syncAuthData);
+      return () => {
+        window.removeEventListener("sindar_mitra_changed", syncAuthData);
+        window.removeEventListener("storage", syncAuthData);
+      };
     }
   }, [pathname]);
 
@@ -166,11 +183,17 @@ export default function Navbar() {
                   className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-[#e8e2d9] hover:border-[#c29d59] shadow-sm transition-all"
                 >
                   <div className="w-7 h-7 rounded-full bg-[#1a3a34] text-[#c29d59] border border-[#c29d59]/50 flex items-center justify-center font-cinzel text-[10.5px] font-bold shrink-0">
-                    HR
+                    {mitraName
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((w: string) => w[0])
+                      .join("")
+                      .toUpperCase() || "MT"}
                   </div>
                   <div className="flex flex-col text-left">
-                    <span className="text-[12px] font-bold text-[#1a3a34] leading-tight">
-                      Homestay Rura Batak
+                    <span className="text-[12px] font-bold text-[#1a3a34] leading-tight max-w-[160px] truncate">
+                      {mitraName}
                     </span>
                     <span className="text-[9px] text-emerald-700 font-semibold uppercase tracking-wider">
                       Mitra Terverifikasi
@@ -372,11 +395,17 @@ export default function Navbar() {
                 <>
                   <div className="p-3.5 rounded-2xl bg-white border border-[#e8e2d9] flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-[#1a3a34] text-[#c29d59] flex items-center justify-center font-cinzel font-bold text-xs shrink-0">
-                      HR
+                      {mitraName
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((w: string) => w[0])
+                        .join("")
+                        .toUpperCase() || "MT"}
                     </div>
                     <div className="flex flex-col truncate">
                       <span className="text-[12.5px] font-bold text-[#1a3a34] truncate">
-                        Homestay Rura Batak
+                        {mitraName}
                       </span>
                       <span className="text-[9.5px] text-emerald-700 font-semibold uppercase">
                         Mitra Terverifikasi

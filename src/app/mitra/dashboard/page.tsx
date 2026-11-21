@@ -106,6 +106,8 @@ export default function DashboardMitraPage() {
             if (typeof parsed.balance === "number") {
               setBalance(parsed.balance);
             }
+            localStorage.setItem("sindar_mitra_name", parsed.name);
+            window.dispatchEvent(new Event("sindar_mitra_changed"));
           }
         }
       } catch (e) {
@@ -123,6 +125,7 @@ export default function DashboardMitraPage() {
       localStorage.setItem("sindar_role", "mitra");
       localStorage.setItem("sindar_current_mitra", JSON.stringify(m));
       localStorage.setItem("sindar_mitra_name", m.name);
+      window.dispatchEvent(new Event("sindar_mitra_changed"));
     }
     setIsSwitchMitraModalOpen(false);
     showToast(`Beralih ke akun mitra: ${m.name}`);

@@ -71,6 +71,7 @@ export default function MitraScanPage() {
       localStorage.setItem("sindar_role", "mitra");
       localStorage.setItem("sindar_current_mitra", JSON.stringify(m));
       localStorage.setItem("sindar_mitra_name", m.name);
+      window.dispatchEvent(new Event("sindar_mitra_changed"));
     }
     setIsSwitchLoketOpen(false);
   };
