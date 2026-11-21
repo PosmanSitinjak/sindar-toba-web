@@ -183,7 +183,7 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
 
     const travelerName =
       (typeof window !== "undefined" && localStorage.getItem("sindar_user_name")) ||
-      "Budi Pratama";
+      "Wisatawan";
 
     const newTrx = {
       trxId: `TRX-${bookingCode}`,

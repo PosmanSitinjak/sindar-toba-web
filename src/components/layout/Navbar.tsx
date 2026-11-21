@@ -24,7 +24,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [authRole, setAuthRole] = useState<"guest" | "mitra" | "user">("guest");
-  const [userName, setUserName] = useState("Budi Pratama");
+  const [userName, setUserName] = useState("Wisatawan");
   const pathname = usePathname();
   const router = useRouter();
 

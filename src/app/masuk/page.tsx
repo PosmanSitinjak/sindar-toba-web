@@ -23,14 +23,21 @@ export default function MasukPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (typeof window !== "undefined") {
-      const cleanName = emailOrPhone.includes("@")
-        ? emailOrPhone.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-        : emailOrPhone || "Budi Pratama";
-      const finalName = cleanName.toLowerCase().includes("christofer") ? "Budi Pratama" : cleanName;
+      const savedEmail = localStorage.getItem("sindar_user_email");
+      const savedName = localStorage.getItem("sindar_user_name");
+
+      let finalName = "";
+      if (savedEmail && savedEmail.toLowerCase() === emailOrPhone.trim().toLowerCase() && savedName) {
+        finalName = savedName;
+      } else {
+        finalName = emailOrPhone.includes("@")
+          ? emailOrPhone.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+          : emailOrPhone.trim() || "Wisatawan";
+      }
 
       localStorage.setItem("sindar_role", "user");
       localStorage.setItem("sindar_user_name", finalName);
-      localStorage.setItem("sindar_user_email", emailOrPhone || "budi.pratama@gmail.com");
+      localStorage.setItem("sindar_user_email", emailOrPhone.trim());
     }
     router.push("/dashboard");
   };
@@ -71,7 +78,20 @@ export default function MasukPage() {
 
           {/* Quick Google SSO */}
           <button
-            onClick={() => alert("Menghubungkan ke Google Single Sign-On...")}
+            type="button"
+            onClick={() => {
+              const savedEmail = typeof window !== "undefined" ? localStorage.getItem("sindar_user_email") : null;
+              const savedName = typeof window !== "undefined" ? localStorage.getItem("sindar_user_name") : null;
+              const inputName = prompt("Simulasi Masuk Akun Google SSO. Masukkan Nama Akun Anda:", savedName || "Wisatawan Danau Toba") || savedName || "Wisatawan Danau Toba";
+              const cleanName = inputName.trim();
+              const gEmail = savedEmail || `${cleanName.toLowerCase().replace(/\s+/g, ".")}@gmail.com`;
+              if (typeof window !== "undefined") {
+                localStorage.setItem("sindar_role", "user");
+                localStorage.setItem("sindar_user_name", cleanName);
+                localStorage.setItem("sindar_user_email", gEmail);
+              }
+              router.push("/dashboard");
+            }}
             className="w-full py-2.5 px-4 rounded-xl border border-[#e8e2d9] bg-white hover:bg-slate-50 text-[13px] font-semibold text-[#1a3a34] flex items-center justify-center gap-2.5 transition-colors shadow-sm mb-6"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">

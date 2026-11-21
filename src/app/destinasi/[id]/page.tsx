@@ -217,7 +217,7 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
 
   // User Authentication State
   const [authRole, setAuthRole] = useState<"guest" | "user" | "mitra">("guest");
-  const [userName, setUserName] = useState<string>("Budi Pratama");
+  const [userName, setUserName] = useState<string>("Wisatawan");
 
   useEffect(() => {
     // If available in Supabase, sync data
@@ -329,7 +329,7 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
 
     const newRev = {
       id: `rev-${Date.now()}`,
-      author: userName || "Budi Pratama",
+      author: userName || "Wisatawan",
       tripType: newTripType,
       date: "Baru saja",
       rating: newRating,
@@ -421,7 +421,7 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
 
     const newTrx = {
       trxId: `TRX-${bookingCode}`,
-      traveler: userName || "Budi Pratama",
+      traveler: userName || "Wisatawan",
       item: `${ticketCount}x ${currentDest.title}${selectedAddonsList.length > 0 ? " + " + selectedAddonsList[0] : ""}`,
       amount: `Rp ${totalPrice.toLocaleString("id-ID")}`,
       channel: channelLabel,

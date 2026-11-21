@@ -39,12 +39,22 @@ export default function DaftarPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (typeof window !== "undefined") {
-      localStorage.setItem("sindar_role", "user");
-      localStorage.setItem("sindar_user_name", formData.name);
-      localStorage.setItem("sindar_user_phone", formData.phone);
-      localStorage.setItem("sindar_user_email", formData.email);
+      const trimmedName = formData.name.trim();
+      const trimmedEmail = formData.email.trim();
+      const trimmedPhone = formData.phone.trim();
 
-      // Save referral tracking
+      // Set user role & exact submitted identity
+      localStorage.setItem("sindar_role", "user");
+      localStorage.setItem("sindar_user_name", trimmedName);
+      localStorage.setItem("sindar_user_phone", trimmedPhone);
+      localStorage.setItem("sindar_user_email", trimmedEmail);
+
+      // Pastikan akun baru mulai bersih tanpa tiket atau komisi dari sesi sebelumnya
+      localStorage.removeItem("sindar_purchased_tickets");
+      localStorage.removeItem("sindar_referral_balance");
+      localStorage.removeItem("sindar_referrals_data");
+
+      // Save referral tracking if code was used
       if (formData.referralCode) {
         localStorage.setItem("sindar_applied_referral", formData.referralCode);
         
@@ -52,11 +62,11 @@ export default function DaftarPage() {
         const existingReferrals = JSON.parse(localStorage.getItem("sindar_referrals_data") || "[]");
         existingReferrals.unshift({
           id: `REF-${Date.now().toString().slice(-4)}`,
-          name: formData.name,
+          name: trimmedName,
           date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
           commission: 25000,
           status: "Komisi Masuk",
-          phone: formData.phone,
+          phone: trimmedPhone,
         });
         localStorage.setItem("sindar_referrals_data", JSON.stringify(existingReferrals));
 
@@ -70,7 +80,7 @@ export default function DaftarPage() {
       ? `\n\n🎉 Kode Referral "${formData.referralCode}" aktif! Pengajak Anda menerima komisi Rp 25.000 dan Anda mendapatkan Voucher Diskon Selamat Datang!` 
       : "";
 
-    alert(`Pendaftaran Akun Berhasil!\nSelamat datang di SINDAR TOBA, ${formData.name}.${refNote}\nE-Tiket dan akun wisatawan Anda telah siap.`);
+    alert(`Pendaftaran Akun Berhasil!\nSelamat datang di SINDAR TOBA, ${formData.name.trim()}.${refNote}\nE-Tiket dan akun wisatawan Anda telah siap.`);
     router.push("/dashboard");
   };
 
@@ -113,8 +123,21 @@ export default function DaftarPage() {
 
           {/* Quick Google SSO */}
           <button
+            type="button"
             onClick={() => {
-              alert("Menghubungkan ke Google Single Sign-On...");
+              const gName = prompt("Simulasi Pendaftaran Google SSO. Masukkan Nama Lengkap Anda:", "Wisatawan Baru") || "Wisatawan Baru";
+              const cleanGName = gName.trim();
+              const gEmail = `${cleanGName.toLowerCase().replace(/\s+/g, ".")}@gmail.com`;
+              if (typeof window !== "undefined") {
+                localStorage.setItem("sindar_role", "user");
+                localStorage.setItem("sindar_user_name", cleanGName);
+                localStorage.setItem("sindar_user_email", gEmail);
+                localStorage.setItem("sindar_user_phone", "081234567890");
+                localStorage.removeItem("sindar_purchased_tickets");
+                localStorage.removeItem("sindar_referral_balance");
+                localStorage.removeItem("sindar_referrals_data");
+              }
+              alert(`Pendaftaran Google Berhasil!\nSelamat datang di SINDAR TOBA, ${cleanGName}.`);
               router.push("/dashboard");
             }}
             className="w-full py-2.5 px-4 rounded-xl border border-[#e8e2d9] bg-white hover:bg-slate-50 text-[13px] font-semibold text-[#1a3a34] flex items-center justify-center gap-2.5 transition-colors shadow-sm mb-6"

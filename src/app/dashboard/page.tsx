@@ -39,7 +39,7 @@ export default function DashboardWisatawanPage() {
   const [showQrModal, setShowQrModal] = useState<string | null>(null);
 
   // Referral & Commission States (Reset to 0 for fresh new user)
-  const [referralCode, setReferralCode] = useState("TOBA-BUDI2026");
+  const [referralCode, setReferralCode] = useState("TOBA-WISATA");
   const [referralBalance, setReferralBalance] = useState(0);
   const [totalWithdrawn, setTotalWithdrawn] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -142,11 +142,11 @@ export default function DashboardWisatawanPage() {
   };
 
   const [userProfile, setUserProfile] = useState({
-    name: "Budi Pratama",
-    email: "budi.pratama@gmail.com",
-    phone: "+62 812-3456-7890",
+    name: "Wisatawan",
+    email: "wisatawan@gmail.com",
+    phone: "-",
     membership: "Wisatawan Baru SINDAR TOBA",
-    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80",
+    avatar: "",
     memberSince: "November 2026",
   });
 
@@ -160,11 +160,14 @@ export default function DashboardWisatawanPage() {
     if (typeof window !== "undefined") {
       const storedName = localStorage.getItem("sindar_user_name");
       const storedEmail = localStorage.getItem("sindar_user_email");
-      if (storedName) {
+      const storedPhone = localStorage.getItem("sindar_user_phone");
+
+      if (storedName || storedEmail || storedPhone) {
         setUserProfile((prev) => ({
           ...prev,
-          name: storedName,
+          name: storedName || prev.name,
           email: storedEmail || prev.email,
+          phone: storedPhone || prev.phone,
         }));
       }
 
@@ -268,11 +271,17 @@ export default function DashboardWisatawanPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
             <div className="flex items-center gap-4 sm:gap-5">
               <div className="relative shrink-0">
-                <img
-                  src={userProfile.avatar}
-                  alt={userProfile.name}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-[#c29d59] shadow-sm"
-                />
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#1a3a34] text-[#c29d59] border-2 border-[#c29d59] shadow-md flex items-center justify-center font-cinzel text-xl sm:text-2xl font-bold">
+                  {userProfile.name
+                    ? userProfile.name
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((w: string) => w[0])
+                        .join("")
+                        .toUpperCase()
+                    : "W"}
+                </div>
                 <span className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white text-[10px]">
                   ✓
                 </span>

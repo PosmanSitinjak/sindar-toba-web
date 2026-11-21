@@ -334,7 +334,7 @@ export default function DashboardMitraPage() {
           if (Array.isArray(parsed) && parsed.length > 0) {
             const mapped = parsed.map((t: any) => ({
               code: t.bookingCode || "ST-BK-DEMO",
-              guest: t.userName || "Budi Pratama (Wisatawan)",
+              guest: t.userName || "Wisatawan",
               service: t.destination || "Layanan Mitra Toba",
               checkIn: t.date || "Hari Ini",
               guests: t.visitors || "1 Tamu",
