@@ -24,7 +24,7 @@ export const PRESET_MITRA_LIST: MitraProfile[] = [
     accountNumber: "102.02.04.098124-1",
     accountHolder: "Mangatur Sitinjak",
     email: "homestay.rurabatak@gmail.com",
-    balance: 5250000,
+    balance: 0,
   },
   {
     name: "Pokdarwis Savana Bukit Holbung",
@@ -37,7 +37,7 @@ export const PRESET_MITRA_LIST: MitraProfile[] = [
     accountNumber: "102.04.11.892110-3",
     accountHolder: "Pokdarwis Harian Boho",
     email: "pokdarwis.holbung@gmail.com",
-    balance: 8400000,
+    balance: 0,
   },
   {
     name: "Sentra Tenun Ulos Harungguan Meat",
@@ -50,7 +50,7 @@ export const PRESET_MITRA_LIST: MitraProfile[] = [
     accountNumber: "107.00.198234-9",
     accountHolder: "Nai Tiurma Tambunan",
     email: "ulos.harungguan@gmail.com",
-    balance: 4120000,
+    balance: 0,
   },
   {
     name: "Kopi Arabika Organik Dolok Sipiak",
@@ -63,6 +63,6 @@ export const PRESET_MITRA_LIST: MitraProfile[] = [
     accountNumber: "102.05.22.449102-8",
     accountHolder: "Jogi Sihombing",
     email: "kopi.lintong@gmail.com",
-    balance: 3750000,
+    balance: 0,
   },
 ];

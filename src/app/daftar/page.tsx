@@ -61,7 +61,7 @@ export default function DaftarPage() {
         localStorage.setItem("sindar_referrals_data", JSON.stringify(existingReferrals));
 
         // Increment earnings
-        const currentBalance = parseInt(localStorage.getItem("sindar_referral_balance") || "150000", 10);
+        const currentBalance = parseInt(localStorage.getItem("sindar_referral_balance") || "0", 10);
         localStorage.setItem("sindar_referral_balance", (currentBalance + 25000).toString());
       }
     }
@@ -233,7 +233,7 @@ export default function DaftarPage() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Contoh: TOBA-CHRISTOFER"
+                  placeholder="Contoh: TOBA-BUDI2026"
                   value={formData.referralCode}
                   onChange={(e) => handleReferralChange(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#e8e2d9] text-[13px] font-mono tracking-wider font-semibold text-[#1a3a34] placeholder:font-sans placeholder:font-normal placeholder:text-gray-400 focus:outline-none focus:border-[#c29d59]"

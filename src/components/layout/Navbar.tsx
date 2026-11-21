@@ -24,6 +24,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [authRole, setAuthRole] = useState<"guest" | "mitra" | "user">("guest");
+  const [userName, setUserName] = useState("Budi Pratama");
   const pathname = usePathname();
   const router = useRouter();
 
@@ -37,6 +38,11 @@ export default function Navbar() {
 
   // Sync auth state based on current route or localStorage
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedName = localStorage.getItem("sindar_user_name");
+      if (storedName) setUserName(storedName);
+    }
+
     if (pathname.startsWith("/mitra/dashboard")) {
       setAuthRole("mitra");
     } else if (pathname.startsWith("/dashboard")) {
@@ -66,8 +72,15 @@ export default function Navbar() {
       localStorage.removeItem("sindar_role");
       localStorage.removeItem("sindar_mitra_name");
       localStorage.removeItem("sindar_user_name");
+      localStorage.removeItem("sindar_user_email");
+      localStorage.removeItem("sindar_user_phone");
+      localStorage.removeItem("sindar_purchased_tickets");
+      localStorage.removeItem("sindar_referral_balance");
+      localStorage.removeItem("sindar_referrals_data");
+      localStorage.removeItem("sindar_current_mitra");
     }
     setAuthRole("guest");
+    setUserName("");
     if (role === "mitra") {
       router.push("/mitra/login");
     } else {
@@ -179,11 +192,17 @@ export default function Navbar() {
                   className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-[#e8e2d9] hover:border-[#c29d59] shadow-sm transition-all"
                 >
                   <div className="w-7 h-7 rounded-full bg-[#1a3a34]/10 text-[#1a3a34] border border-[#c29d59]/50 flex items-center justify-center text-[11px] font-bold shrink-0">
-                    CS
+                    {userName
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((w: string) => w[0])
+                      .join("")
+                      .toUpperCase() || "BP"}
                   </div>
                   <div className="flex flex-col text-left">
                     <span className="text-[12px] font-bold text-[#1a3a34] leading-tight">
-                      Christofer Sitinjak
+                      {userName}
                     </span>
                     <span className="text-[9px] text-[#575e5b] font-medium">
                       Wisatawan
@@ -376,14 +395,20 @@ export default function Navbar() {
                 <>
                   <div className="p-3.5 rounded-2xl bg-white border border-[#e8e2d9] flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-[#1a3a34]/10 text-[#1a3a34] flex items-center justify-center font-bold text-xs shrink-0">
-                      CS
+                      {userName
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((w: string) => w[0])
+                        .join("")
+                        .toUpperCase() || "BP"}
                     </div>
                     <div className="flex flex-col truncate">
                       <span className="text-[12.5px] font-bold text-[#1a3a34] truncate">
-                        Christofer Sitinjak
+                        {userName}
                       </span>
                       <span className="text-[9.5px] text-[#575e5b]">
-                        Wisatawan Terverifikasi
+                        Wisatawan Baru
                       </span>
                     </div>
                   </div>

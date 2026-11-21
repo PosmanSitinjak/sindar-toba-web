@@ -45,7 +45,10 @@ export default function LupaSandiPage() {
       localStorage.setItem("sindar_user_password", newPassword);
       localStorage.setItem("sindar_user_email", identifier);
       localStorage.setItem("sindar_role", "user");
-      localStorage.setItem("sindar_user_name", "Christofer Sitinjak");
+      const cleanName = identifier.includes("@")
+        ? identifier.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        : identifier || "Budi Pratama";
+      localStorage.setItem("sindar_user_name", cleanName);
     }
 
     setErrorMessage(null);

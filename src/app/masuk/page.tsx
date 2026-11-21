@@ -23,8 +23,14 @@ export default function MasukPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (typeof window !== "undefined") {
+      const cleanName = emailOrPhone.includes("@")
+        ? emailOrPhone.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        : emailOrPhone || "Budi Pratama";
+      const finalName = cleanName.toLowerCase().includes("christofer") ? "Budi Pratama" : cleanName;
+
       localStorage.setItem("sindar_role", "user");
-      localStorage.setItem("sindar_user_name", "Christofer Sitinjak");
+      localStorage.setItem("sindar_user_name", finalName);
+      localStorage.setItem("sindar_user_email", emailOrPhone || "budi.pratama@gmail.com");
     }
     router.push("/dashboard");
   };

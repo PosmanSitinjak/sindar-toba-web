@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
   Ticket,
@@ -29,16 +30,18 @@ import {
   Sparkles,
   ArrowRight,
   X,
+  LogOut,
 } from "lucide-react";
 
 export default function DashboardWisatawanPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("tiket");
   const [showQrModal, setShowQrModal] = useState<string | null>(null);
 
-  // Referral & Commission States
-  const [referralCode, setReferralCode] = useState("TOBA-CHRISTOFER");
-  const [referralBalance, setReferralBalance] = useState(150000);
-  const [totalWithdrawn, setTotalWithdrawn] = useState(200000);
+  // Referral & Commission States (Reset to 0 for fresh new user)
+  const [referralCode, setReferralCode] = useState("TOBA-BUDI2026");
+  const [referralBalance, setReferralBalance] = useState(0);
+  const [totalWithdrawn, setTotalWithdrawn] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -47,59 +50,10 @@ export default function DashboardWisatawanPage() {
     method: "BCA",
     accountNumber: "",
     accountName: "",
-    amount: "150000",
+    amount: "50000",
   });
 
-  const [referralList, setReferralList] = useState([
-    {
-      id: "REF-001",
-      name: "Sarah Hutabarat",
-      date: "18 Nov 2026",
-      status: "Selesai (Komisi Cair)",
-      commission: 25000,
-      reward: "Pendaftaran Akun Wisatawan",
-    },
-    {
-      id: "REF-002",
-      name: "Daniel Silalahi",
-      date: "15 Nov 2026",
-      status: "Selesai (Komisi Cair)",
-      commission: 25000,
-      reward: "Pemesanan Tiket Bukit Holbung",
-    },
-    {
-      id: "REF-003",
-      name: "Maya Nainggolan",
-      date: "12 Nov 2026",
-      status: "Selesai (Komisi Cair)",
-      commission: 25000,
-      reward: "Pendaftaran Akun Wisatawan",
-    },
-    {
-      id: "REF-004",
-      name: "Budi Tambunan",
-      date: "09 Nov 2026",
-      status: "Selesai (Komisi Cair)",
-      commission: 25000,
-      reward: "Pemesanan Tur Solu Bolon",
-    },
-    {
-      id: "REF-005",
-      name: "Grace Manurung",
-      date: "04 Nov 2026",
-      status: "Selesai (Komisi Cair)",
-      commission: 25000,
-      reward: "Pendaftaran Akun Wisatawan",
-    },
-    {
-      id: "REF-006",
-      name: "Hendra Sinaga",
-      date: "01 Nov 2026",
-      status: "Selesai (Komisi Cair)",
-      commission: 25000,
-      reward: "Pemesanan Tiket Sipiso-piso",
-    },
-  ]);
+  const [referralList, setReferralList] = useState<any[]>([]);
 
   // Sync profile & referral from localStorage
   useEffect(() => {
@@ -174,64 +128,57 @@ export default function DashboardWisatawanPage() {
     setWithdrawSuccess(true);
   };
 
-  const userProfile = {
-    name: "Christofer Sitinjak",
-    email: "posmansitinjak06@gmail.com",
-    phone: "+62 812-3456-7890",
-    membership: "Wisatawan Terverifikasi",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
-    memberSince: "November 2026",
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("sindar_role");
+      localStorage.removeItem("sindar_user_name");
+      localStorage.removeItem("sindar_user_email");
+      localStorage.removeItem("sindar_user_phone");
+      localStorage.removeItem("sindar_purchased_tickets");
+      localStorage.removeItem("sindar_referral_balance");
+      localStorage.removeItem("sindar_referrals_data");
+    }
+    router.push("/masuk");
   };
 
-  const initialTickets = [
-    {
-      id: "TKT-001",
-      bookingCode: "ST-2026-HB0491",
-      destination: "Bukit Holbung Samosir",
-      geosite: "Geosite UNESCO #04",
-      date: "Jumat, 20 Nov 2026",
-      time: "07:00 - 18:00 WIB",
-      visitors: "2 Orang",
-      addons: ["Pemandu Cerita Adat", "Sewa 2 Kain Ulos"],
-      totalPaid: "Rp 155.000",
-      status: "Lunas (Siap Digunakan)",
-      location: "Janji Martahan, Samosir",
-      organizerPhone: "6281234567890",
-      organizerName: "Pokdarwis Harian Boho",
-    },
-    {
-      id: "TKT-002",
-      bookingCode: "ST-2026-SB0182",
-      destination: "Pelayaran Perahu Solu Bolon",
-      geosite: "Pengalaman Danau Kaldera",
-      date: "Sabtu, 21 Nov 2026",
-      time: "08:30 WIB",
-      visitors: "2 Peserta",
-      addons: ["Pelampung Keselamatan", "Teh & Sarapan Ringan"],
-      totalPaid: "Rp 500.000",
-      status: "Terkonfirmasi",
-      location: "Dermaga Tuk-tuk, Samosir",
-      organizerPhone: "6281234567891",
-      organizerName: "Komunitas Nahkoda Solu",
-    },
-  ];
+  const [userProfile, setUserProfile] = useState({
+    name: "Budi Pratama",
+    email: "budi.pratama@gmail.com",
+    phone: "+62 812-3456-7890",
+    membership: "Wisatawan Baru SINDAR TOBA",
+    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80",
+    memberSince: "November 2026",
+  });
 
-  const [activeTickets, setActiveTickets] = useState(initialTickets);
+  // Default empty tickets for fresh start (no purchases yet)
+  const initialTickets: any[] = [];
 
-  // Sync tickets from LocalStorage & Supabase
+  const [activeTickets, setActiveTickets] = useState<any[]>(initialTickets);
+
+  // Sync profile & tickets from LocalStorage & Supabase
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const storedName = localStorage.getItem("sindar_user_name");
+      const storedEmail = localStorage.getItem("sindar_user_email");
+      if (storedName) {
+        setUserProfile((prev) => ({
+          ...prev,
+          name: storedName,
+          email: storedEmail || prev.email,
+        }));
+      }
+
       try {
         const storedTkt = localStorage.getItem("sindar_purchased_tickets");
         if (storedTkt) {
           const parsed = JSON.parse(storedTkt);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setActiveTickets((prev) => {
-              const existingCodes = new Set(prev.map((t) => t.bookingCode));
-              const newOnes = parsed.filter((m: any) => !existingCodes.has(m.bookingCode));
-              return [...newOnes, ...prev];
-            });
+            setActiveTickets(parsed);
+          } else {
+            setActiveTickets([]);
           }
+        } else {
+          setActiveTickets([]);
         }
       } catch (e) {
         console.error(e);
@@ -260,11 +207,9 @@ export default function DashboardWisatawanPage() {
               organizerPhone: d.organizer_phone || "6281234567890",
               organizerName: d.organizer_name || "Pokdarwis Danau Toba",
             }));
-            setActiveTickets((prev) => {
-              const existingCodes = new Set(prev.map((t) => t.bookingCode));
-              const newOnes = mapped.filter((m: any) => !existingCodes.has(m.bookingCode));
-              return [...newOnes, ...prev];
-            });
+            setActiveTickets(mapped);
+          } else {
+            // Keep empty if supabase has 0 tickets
           }
         });
     }
@@ -346,6 +291,14 @@ export default function DashboardWisatawanPage() {
                   <span>{userProfile.email}</span>
                   <span className="hidden sm:inline">•</span>
                   <span>{userProfile.phone}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <button
+                    onClick={handleLogout}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#b8653a] hover:text-[#914622] transition-colors"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    <span>Keluar / Ganti Akun</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -431,117 +384,142 @@ export default function DashboardWisatawanPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
-              {activeTickets.map((tkt) => (
-                <div
-                  key={tkt.id}
-                  className="bg-white border border-[#e8e2d9] hover:border-[#c29d59] rounded-3xl p-5 sm:p-6 shadow-sm transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Top Row: Code & Badge */}
-                    <div className="flex items-center justify-between pb-3 border-b border-[#e8e2d9]/60">
-                      <div>
-                        <span className="font-cinzel text-[10.5px] font-bold text-[#b8653a] tracking-wider block">
-                          KODE BOOKING
-                        </span>
-                        <span className="text-[13px] sm:text-sm font-bold text-[#1a3a34]">
-                          {tkt.bookingCode}
-                        </span>
-                      </div>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full border text-[10.5px] font-semibold ${
-                          tkt.status?.toLowerCase().includes("selesai") ||
-                          tkt.status?.toLowerCase().includes("digunakan")
-                            ? "bg-stone-100 border-stone-300 text-stone-600 font-bold"
-                            : "bg-emerald-50 border-emerald-200 text-emerald-800"
-                        }`}
-                      >
-                        {tkt.status}
-                      </span>
-                    </div>
-
-                    {/* Middle: Title & Geosite */}
-                    <div className="py-3.5">
-                      <span className="text-[10.5px] font-semibold text-[#c29d59] uppercase tracking-wider block mb-1">
-                        {tkt.geosite}
-                      </span>
-                      <h3 className="font-newsreader text-xl sm:text-2xl font-semibold text-[#1a3a34]">
-                        {tkt.destination}
-                      </h3>
-                      <p className="flex items-center gap-1.5 text-[12px] text-[#575e5b] mt-1">
-                        <MapPin className="w-3.5 h-3.5 text-[#c29d59]" />
-                        {tkt.location}
-                      </p>
-                    </div>
-
-                    {/* Meta Details */}
-                    <div className="grid grid-cols-2 gap-2.5 p-3.5 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9]/60 text-[12px] mb-3.5">
-                      <div>
-                        <span className="text-[#575e5b] block text-[10.5px]">Jadwal:</span>
-                        <span className="font-semibold text-[#1a3a34] block text-[11.5px]">{tkt.date}</span>
-                        <span className="text-[#575e5b] text-[10.5px]">{tkt.time}</span>
-                      </div>
-                      <div>
-                        <span className="text-[#575e5b] block text-[10.5px]">Jumlah:</span>
-                        <span className="font-semibold text-[#1a3a34] block text-[11.5px]">{tkt.visitors}</span>
-                        <span className="text-emerald-700 font-semibold text-[10.5px]">
-                          {tkt.totalPaid}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Addons List */}
-                    <div className="mb-4">
-                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#575e5b] block mb-1.5">
-                        Layanan Termasuk:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {tkt.addons.map((add, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 rounded-full bg-white border border-[#e8e2d9] text-[10.5px] text-[#2c3531] flex items-center gap-1"
-                          >
-                            <CheckCircle2 className="w-3 h-3 text-[#c29d59]" />
-                            {add}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions & QR Code Trigger */}
-                  <div className="pt-3.5 border-t border-[#e8e2d9] flex items-center gap-2">
-                    <button
-                      onClick={() => setShowQrModal(tkt.bookingCode)}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-[#1a3a34] hover:bg-[#122a25] text-white text-[11.5px] sm:text-[12px] font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
-                    >
-                      <QrCode className="w-4 h-4 text-[#c29d59]" />
-                      <span>QR Code E-Tiket</span>
-                    </button>
-
-                    <a
-                      href={`https://wa.me/${tkt.organizerPhone}?text=Halo%20${encodeURIComponent(tkt.organizerName)},%20saya%20pemegang%20tiket%20${tkt.bookingCode}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-2.5 rounded-xl border border-[#e8e2d9] hover:bg-[#faf8f5] text-emerald-700 transition-colors"
-                      title="Hubungi Mitra via WhatsApp"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                    </a>
-
-                    <button
-                      onClick={() =>
-                        alert(`Mengunduh E-Tiket PDF untuk ${tkt.bookingCode}...`)
-                      }
-                      className="p-2.5 rounded-xl border border-[#e8e2d9] hover:bg-[#faf8f5] text-[#1a3a34] transition-colors"
-                      title="Unduh PDF Tiket"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </div>
+            {activeTickets.length === 0 ? (
+              <div className="bg-white border border-[#e8e2d9] rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-[#1a3a34]/10 text-[#c29d59] mx-auto flex items-center justify-center">
+                  <Ticket className="w-8 h-8" />
                 </div>
-              ))}
-            </div>
+                <div>
+                  <h3 className="font-newsreader text-2xl font-bold text-[#1a3a34]">
+                    Belum Ada Tiket Dipesan
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#575e5b] max-w-md mx-auto mt-1">
+                    Anda belum memiliki tiket wisata aktif. Jelajahi 16 Geosite resmi UNESCO Kaldera Toba dan pesan tiket pengalaman budaya Anda sekarang.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Link
+                    href="/jelajahi"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md active:scale-95"
+                  >
+                    <span>Mulai Jelajahi Destinasi</span>
+                    <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+                {activeTickets.map((tkt) => (
+                  <div
+                    key={tkt.id}
+                    className="bg-white border border-[#e8e2d9] hover:border-[#c29d59] rounded-3xl p-5 sm:p-6 shadow-sm transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Top Row: Code & Badge */}
+                      <div className="flex items-center justify-between pb-3 border-b border-[#e8e2d9]/60">
+                        <div>
+                          <span className="font-cinzel text-[10.5px] font-bold text-[#b8653a] tracking-wider block">
+                            KODE BOOKING
+                          </span>
+                          <span className="text-[13px] sm:text-sm font-bold text-[#1a3a34]">
+                            {tkt.bookingCode}
+                          </span>
+                        </div>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full border text-[10.5px] font-semibold ${
+                            tkt.status?.toLowerCase().includes("selesai") ||
+                            tkt.status?.toLowerCase().includes("digunakan")
+                              ? "bg-stone-100 border-stone-300 text-stone-600 font-bold"
+                              : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                          }`}
+                        >
+                          {tkt.status}
+                        </span>
+                      </div>
+
+                      {/* Middle: Title & Geosite */}
+                      <div className="py-3.5">
+                        <span className="text-[10.5px] font-semibold text-[#c29d59] uppercase tracking-wider block mb-1">
+                          {tkt.geosite}
+                        </span>
+                        <h3 className="font-newsreader text-xl sm:text-2xl font-semibold text-[#1a3a34]">
+                          {tkt.destination}
+                        </h3>
+                        <p className="flex items-center gap-1.5 text-[12px] text-[#575e5b] mt-1">
+                          <MapPin className="w-3.5 h-3.5 text-[#c29d59]" />
+                          {tkt.location}
+                        </p>
+                      </div>
+
+                      {/* Meta Details */}
+                      <div className="grid grid-cols-2 gap-2.5 p-3.5 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9]/60 text-[12px] mb-3.5">
+                        <div>
+                          <span className="text-[#575e5b] block text-[10.5px]">Jadwal:</span>
+                          <span className="font-semibold text-[#1a3a34] block text-[11.5px]">{tkt.date}</span>
+                          <span className="text-[#575e5b] text-[10.5px]">{tkt.time}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#575e5b] block text-[10.5px]">Jumlah:</span>
+                          <span className="font-semibold text-[#1a3a34] block text-[11.5px]">{tkt.visitors}</span>
+                          <span className="text-emerald-700 font-semibold text-[10.5px]">
+                            {tkt.totalPaid}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Addons List */}
+                      <div className="mb-4">
+                        <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#575e5b] block mb-1.5">
+                          Layanan Termasuk:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {tkt.addons.map((add: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 rounded-full bg-white border border-[#e8e2d9] text-[10.5px] text-[#2c3531] flex items-center gap-1"
+                            >
+                              <CheckCircle2 className="w-3 h-3 text-[#c29d59]" />
+                              {add}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions & QR Code Trigger */}
+                    <div className="pt-3.5 border-t border-[#e8e2d9] flex items-center gap-2">
+                      <button
+                        onClick={() => setShowQrModal(tkt.bookingCode)}
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-[#1a3a34] hover:bg-[#122a25] text-white text-[11.5px] sm:text-[12px] font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                      >
+                        <QrCode className="w-4 h-4 text-[#c29d59]" />
+                        <span>QR Code E-Tiket</span>
+                      </button>
+
+                      <a
+                        href={`https://wa.me/${tkt.organizerPhone}?text=Halo%20${encodeURIComponent(tkt.organizerName)},%20saya%20pemegang%20tiket%20${tkt.bookingCode}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2.5 rounded-xl border border-[#e8e2d9] hover:bg-[#faf8f5] text-emerald-700 transition-colors"
+                        title="Hubungi Mitra via WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
+
+                      <button
+                        onClick={() =>
+                          alert(`Mengunduh E-Tiket PDF untuk ${tkt.bookingCode}...`)
+                        }
+                        className="p-2.5 rounded-xl border border-[#e8e2d9] hover:bg-[#faf8f5] text-[#1a3a34] transition-colors"
+                        title="Unduh PDF Tiket"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

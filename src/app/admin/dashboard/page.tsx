@@ -257,60 +257,21 @@ export default function SuperadminDashboardPage() {
     },
   ]);
 
-  const defaultTransactions = [
-    {
-      trxId: "TRX-ST-98214",
-      traveler: "Bagus Pratama",
-      item: "2x Tiket Bukit Holbung Samosir + Pemandu",
-      amount: "Rp 155.000",
-      channel: "QRIS Dinamis",
-      escrowStatus: "Tertahan di Escrow",
-      time: "10 Menit Lalu",
-    },
-    {
-      trxId: "TRX-ST-98213",
-      traveler: "Sarah Jenkins",
-      item: "Pelayaran Damai Perahu Solu Bolon (2 Pax)",
-      amount: "Rp 500.000",
-      channel: "VA Bank Mandiri",
-      escrowStatus: "Tertahan di Escrow",
-      time: "32 Menit Lalu",
-    },
-    {
-      trxId: "TRX-ST-98212",
-      traveler: "Rian Sitompul",
-      item: "1x Homestay Rura Batak (Check-in Hari Ini)",
-      amount: "Rp 350.000",
-      channel: "VA Bank Sumut",
-      escrowStatus: "Siap Dicairkan ke Mitra",
-      time: "2 Jam Lalu",
-    },
-    {
-      trxId: "TRX-ST-98210",
-      traveler: "Dewi Lestari",
-      item: "Kopi Arabika Lintong Specialty 250g",
-      amount: "Rp 95.000",
-      channel: "GoPay / E-Wallet",
-      escrowStatus: "Selesai",
-      time: "4 Jam Lalu",
-    },
-  ];
+  // Default empty escrow transactions for fresh state
+  const defaultTransactions: any[] = [];
 
-  const [recentTransactions, setRecentTransactions] = useState(defaultTransactions);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>(defaultTransactions);
 
   // Sync Transactions from LocalStorage & Supabase tickets
   useEffect(() => {
+    let list: any[] = [];
     if (typeof window !== "undefined") {
       try {
         const storedTrx = localStorage.getItem("sindar_transactions");
         if (storedTrx) {
           const parsed = JSON.parse(storedTrx);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setRecentTransactions((prev) => {
-              const existingIds = new Set(prev.map((t) => t.trxId));
-              const newOnes = parsed.filter((m: any) => !existingIds.has(m.trxId));
-              return [...newOnes, ...prev];
-            });
+            list = parsed;
           }
         }
       } catch (e) {
@@ -331,16 +292,21 @@ export default function SuperadminDashboardPage() {
               item: `${d.visitors}x ${d.destination_name}`,
               amount: `Rp ${Number(d.total_paid).toLocaleString("id-ID")}`,
               channel: "QRIS Dinamis",
-              escrowStatus: "Tertahan di Escrow",
+              escrowStatus: d.status?.includes("Selesai") ? "Siap Dicairkan ke Mitra" : "Tertahan di Escrow",
               time: "Baru saja",
             }));
-            setRecentTransactions((prev) => {
-              const existingIds = new Set(prev.map((t) => t.trxId));
-              const newOnes = mapped.filter((m: any) => !existingIds.has(m.trxId));
-              return [...newOnes, ...prev];
+            const existing = new Set(list.map((l: any) => l.trxId));
+            const combined = [...list];
+            mapped.forEach((m: any) => {
+              if (!existing.has(m.trxId)) combined.push(m);
             });
+            setRecentTransactions(combined);
+          } else {
+            setRecentTransactions(list);
           }
         });
+    } else {
+      setRecentTransactions(list);
     }
   }, []);
 
@@ -411,7 +377,7 @@ export default function SuperadminDashboardPage() {
               </Link>
 
               <span className="text-white/70 hidden sm:inline">
-                Admin: <strong>Christofer</strong>
+                Admin: <strong>Otorita BPODT</strong>
               </span>
 
               <Link
@@ -776,37 +742,47 @@ export default function SuperadminDashboardPage() {
               </button>
             </div>
 
-            {/* Table with responsive horizontal scroll */}
-            <div className="overflow-x-auto no-scrollbar w-full">
-              <table className="w-full text-left text-[12px] min-w-[580px]">
-                <thead>
-                  <tr className="border-b border-[#e8e2d9] text-[#575e5b] uppercase text-[10px] tracking-wider">
-                    <th className="pb-2.5">ID Transaksi</th>
-                    <th className="pb-2.5">Wisatawan</th>
-                    <th className="pb-2.5">Layanan</th>
-                    <th className="pb-2.5">Nominal</th>
-                    <th className="pb-2.5">Kanal</th>
-                    <th className="pb-2.5 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e8e2d9]/60">
-                  {recentTransactions.map((tx) => (
-                    <tr key={tx.trxId} className="hover:bg-[#faf8f5]">
-                      <td className="py-2.5 font-mono font-bold text-[#1a3a34]">{tx.trxId}</td>
-                      <td className="py-2.5 font-semibold text-[#1a3a34]">{tx.traveler}</td>
-                      <td className="py-2.5 text-[#575e5b] max-w-[160px] truncate">{tx.item}</td>
-                      <td className="py-2.5 font-bold text-[#1a3a34]">{tx.amount}</td>
-                      <td className="py-2.5 text-[#575e5b]">{tx.channel}</td>
-                      <td className="py-2.5 text-right">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[9.5px] font-bold">
-                          {tx.escrowStatus}
-                        </span>
-                      </td>
+            {/* Table with responsive horizontal scroll or empty state */}
+            {recentTransactions.length === 0 ? (
+              <div className="p-8 text-center bg-[#faf8f5] rounded-2xl border border-dashed border-[#e8e2d9] space-y-2">
+                <Database className="w-8 h-8 text-[#c29d59] mx-auto opacity-70" />
+                <h4 className="font-semibold text-sm text-[#1a3a34]">Belum Ada Transaksi Escrow</h4>
+                <p className="text-xs text-[#575e5b] max-w-sm mx-auto">
+                  Rekening bersama BPODT aktif dan siap menampung pembayaran tiket wisatawan secara otomatis. Transaksi baru akan tercatat di sini secara real-time.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto no-scrollbar w-full">
+                <table className="w-full text-left text-[12px] min-w-[580px]">
+                  <thead>
+                    <tr className="border-b border-[#e8e2d9] text-[#575e5b] uppercase text-[10px] tracking-wider">
+                      <th className="pb-2.5">ID Transaksi</th>
+                      <th className="pb-2.5">Wisatawan</th>
+                      <th className="pb-2.5">Layanan</th>
+                      <th className="pb-2.5">Nominal</th>
+                      <th className="pb-2.5">Kanal</th>
+                      <th className="pb-2.5 text-right">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-[#e8e2d9]/60">
+                    {recentTransactions.map((tx) => (
+                      <tr key={tx.trxId} className="hover:bg-[#faf8f5]">
+                        <td className="py-2.5 font-mono font-bold text-[#1a3a34]">{tx.trxId}</td>
+                        <td className="py-2.5 font-semibold text-[#1a3a34]">{tx.traveler}</td>
+                        <td className="py-2.5 text-[#575e5b] max-w-[160px] truncate">{tx.item}</td>
+                        <td className="py-2.5 font-bold text-[#1a3a34]">{tx.amount}</td>
+                        <td className="py-2.5 text-[#575e5b]">{tx.channel}</td>
+                        <td className="py-2.5 text-right">
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[9.5px] font-bold">
+                            {tx.escrowStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 

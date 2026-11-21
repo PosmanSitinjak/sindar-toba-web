@@ -60,7 +60,7 @@ export default function MitraLoginPage() {
       accountNumber: "102.02.04.098124-1",
       accountHolder: cleanName,
       email: identifier,
-      balance: 4500000,
+      balance: 0,
     };
 
     loginWithMitra(customMitra);

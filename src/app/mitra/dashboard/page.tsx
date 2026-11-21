@@ -56,8 +56,8 @@ export default function DashboardMitraPage() {
   const [business, setBusiness] = useState(defaultBusiness);
   const [isSwitchMitraModalOpen, setIsSwitchMitraModalOpen] = useState(false);
 
-  // State: Balance & Listings
-  const [balance, setBalance] = useState<number>(5250000);
+  // State: Balance & Listings (Reset to Rp 0 for fresh partner account)
+  const [balance, setBalance] = useState<number>(0);
   const [listings, setListings] = useState<ListingItem[]>([
     {
       id: "LIST-01",
@@ -319,79 +319,10 @@ export default function DashboardMitraPage() {
     );
   };
 
-  const metrics = [
-    {
-      label: "Omzet Bulan Ini",
-      value: "Rp 14,8 Juta",
-      change: "+18.4%",
-      desc: "vs bln lalu",
-      icon: DollarSign,
-      color: "text-emerald-700",
-      bgColor: "bg-emerald-50",
-    },
-    {
-      label: "Reservasi Aktif",
-      value: "8 Pesanan",
-      change: "4 Menunggu",
-      desc: "check-in",
-      icon: Calendar,
-      color: "text-[#1a3a34]",
-      bgColor: "bg-[#1a3a34]/10",
-    },
-    {
-      label: "Total Wisatawan",
-      value: "64 Tamu",
-      change: "+12 Tamu",
-      desc: "bulan ini",
-      icon: Users,
-      color: "text-[#c29d59]",
-      bgColor: "bg-[#c29d59]/10",
-    },
-    {
-      label: "Skor Kepuasan",
-      value: "4.9 / 5.0",
-      change: "88 Ulasan",
-      desc: "100% respons",
-      icon: TrendingUp,
-      color: "text-[#b8653a]",
-      bgColor: "bg-[#b8653a]/10",
-    },
-  ];
+  // Default empty bookings for fresh start
+  const defaultBookings: any[] = [];
 
-  const defaultBookings = [
-    {
-      code: "ST-BK-9182",
-      guest: "Bagus Pratama",
-      service: "Kamar Rumah Bolon (2 Malam)",
-      checkIn: "20 Nov 2026",
-      guests: "2 Tamu",
-      total: "Rp 700.000",
-      status: "Lunas (Siap Datang)",
-      phone: "6281234567890",
-    },
-    {
-      code: "ST-BK-9183",
-      guest: "Sarah Jenkins",
-      service: "Tur Bersepeda & Ulos",
-      checkIn: "21 Nov 2026",
-      guests: "3 Tamu",
-      total: "Rp 450.000",
-      status: "Lunas (Siap Datang)",
-      phone: "6281234567892",
-    },
-    {
-      code: "ST-BK-9180",
-      guest: "Rian Sitompul",
-      service: "Kamar Rumah Bolon (1 Malam)",
-      checkIn: "18 Nov 2026",
-      guests: "2 Tamu",
-      total: "Rp 350.000",
-      status: "Selesai",
-      phone: "6281234567893",
-    },
-  ];
-
-  const [recentBookings, setRecentBookings] = useState(defaultBookings);
+  const [recentBookings, setRecentBookings] = useState<any[]>(defaultBookings);
 
   // Sync recent bookings from LocalStorage (Demo & Testing live purchases)
   useEffect(() => {
@@ -403,36 +334,75 @@ export default function DashboardMitraPage() {
           if (Array.isArray(parsed) && parsed.length > 0) {
             const mapped = parsed.map((t: any) => ({
               code: t.bookingCode || "ST-BK-DEMO",
-              guest: "Wisatawan Terverifikasi (Christofer)",
+              guest: t.userName || "Budi Pratama (Wisatawan)",
               service: t.destination || "Layanan Mitra Toba",
               checkIn: t.date || "Hari Ini",
               guests: t.visitors || "1 Tamu",
               total: t.totalPaid || "Rp 150.000",
-              status: "Lunas (Siap Datang)",
+              status: t.status || "Lunas (Siap Datang)",
               phone: "6281234567890",
             }));
 
-            setRecentBookings((prev) => {
-              const existingCodes = new Set(prev.map((b) => b.code));
-              const newOnes = mapped.filter((m: any) => !existingCodes.has(m.code));
-              return [...newOnes, ...prev];
-            });
+            setRecentBookings(mapped);
 
             // Update balance for testing demo
             const extraRevenue = parsed.reduce((acc: number, cur: any) => {
               const num = parseInt((cur.totalPaid || "0").replace(/\D/g, "")) || 0;
               return acc + num;
             }, 0);
-            if (extraRevenue > 0) {
-              setBalance((prev) => 5250000 + extraRevenue);
-            }
+            setBalance(extraRevenue);
+          } else {
+            setRecentBookings([]);
+            setBalance(0);
           }
+        } else {
+          setRecentBookings([]);
+          setBalance(0);
         }
       } catch (e) {
         console.error(e);
       }
     }
   }, []);
+
+  const metrics = [
+    {
+      label: "Omzet Bulan Ini",
+      value: `Rp ${balance.toLocaleString("id-ID")}`,
+      change: balance > 0 ? "+100%" : "0%",
+      desc: "saldo dompet",
+      icon: DollarSign,
+      color: "text-emerald-700",
+      bgColor: "bg-emerald-50",
+    },
+    {
+      label: "Reservasi Aktif",
+      value: `${recentBookings.filter((b) => !b.status.toLowerCase().includes("selesai")).length} Pesanan`,
+      change: recentBookings.length > 0 ? "Menunggu Check-In" : "Belum Ada",
+      desc: "di loket",
+      icon: Calendar,
+      color: "text-[#1a3a34]",
+      bgColor: "bg-[#1a3a34]/10",
+    },
+    {
+      label: "Total Wisatawan",
+      value: `${recentBookings.length} Tamu`,
+      change: recentBookings.length > 0 ? `+${recentBookings.length} Tamu` : "0 Tamu",
+      desc: "bulan ini",
+      icon: Users,
+      color: "text-[#c29d59]",
+      bgColor: "bg-[#c29d59]/10",
+    },
+    {
+      label: "Skor Kepuasan",
+      value: "5.0 / 5.0",
+      change: "Mitra Resmi",
+      desc: "100% respons",
+      icon: TrendingUp,
+      color: "text-[#b8653a]",
+      bgColor: "bg-[#b8653a]/10",
+    },
+  ];
 
   // Handle direct check-in of guest from dashboard
   const handleCheckInGuest = async (code: string) => {
@@ -614,66 +584,78 @@ export default function DashboardMitraPage() {
               </div>
 
               <div className="space-y-3">
-                {recentBookings.map((bk) => (
-                  <div
-                    key={bk.code}
-                    className="p-3.5 sm:p-4 rounded-2xl border border-[#e8e2d9] hover:border-[#c29d59] bg-[#faf8f5] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-xs font-bold text-[#b8653a]">
-                          {bk.code}
-                        </span>
-                        <span className="text-white bg-[#1a3a34] text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                          {bk.checkIn}
-                        </span>
-                      </div>
-                      <h4 className="font-semibold text-sm text-[#1a3a34]">{bk.guest}</h4>
-                      <p className="text-[12px] text-[#575e5b]">
-                        {bk.service} • {bk.guests}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#e8e2d9]/60">
-                      <div className="text-left sm:text-right">
-                        <span className="text-sm font-bold text-[#1a3a34] block">
-                          {bk.total}
-                        </span>
-                        <span className="text-[10px] text-emerald-700 font-semibold">
-                          {bk.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {!bk.status.toLowerCase().includes("selesai") ? (
-                          <button
-                            onClick={() => handleCheckInGuest(bk.code)}
-                            className="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[10.5px] font-semibold flex items-center gap-1 shadow-sm active:scale-95 transition-colors"
-                            title="Konfirmasi Check-In Tamu Hadir"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Check-In</span>
-                          </button>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                            Hadir
-                          </span>
-                        )}
-
-                        <a
-                          href={`https://wa.me/${bk.phone}?text=Halo%20${encodeURIComponent(
-                            bk.guest
-                          )},%20kami%20dari%20Homestay%20Rura%20Batak`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-2 sm:p-2 rounded-xl bg-white border border-[#e8e2d9] hover:bg-emerald-50 text-emerald-700 transition-colors"
-                          title="Chat Tamu via WA"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                        </a>
-                      </div>
-                    </div>
+                {recentBookings.length === 0 ? (
+                  <div className="p-8 rounded-2xl border border-dashed border-[#e8e2d9] bg-[#faf8f5] text-center space-y-2">
+                    <Users className="w-8 h-8 text-[#c29d59] mx-auto opacity-70" />
+                    <h4 className="font-semibold text-sm text-[#1a3a34]">
+                      Belum Ada Pemesanan Masuk
+                    </h4>
+                    <p className="text-xs text-[#575e5b] max-w-sm mx-auto">
+                      Layanan Anda saat ini aktif dan siap menerima reservasi dari wisatawan. Pemesanan baru oleh wisatawan akan langsung muncul di sini secara real-time.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  recentBookings.map((bk) => (
+                    <div
+                      key={bk.code}
+                      className="p-3.5 sm:p-4 rounded-2xl border border-[#e8e2d9] hover:border-[#c29d59] bg-[#faf8f5] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-xs font-bold text-[#b8653a]">
+                            {bk.code}
+                          </span>
+                          <span className="text-white bg-[#1a3a34] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                            {bk.checkIn}
+                          </span>
+                        </div>
+                        <h4 className="font-semibold text-sm text-[#1a3a34]">{bk.guest}</h4>
+                        <p className="text-[12px] text-[#575e5b]">
+                          {bk.service} • {bk.guests}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#e8e2d9]/60">
+                        <div className="text-left sm:text-right">
+                          <span className="text-sm font-bold text-[#1a3a34] block">
+                            {bk.total}
+                          </span>
+                          <span className="text-[10px] text-emerald-700 font-semibold">
+                            {bk.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!bk.status.toLowerCase().includes("selesai") ? (
+                            <button
+                              onClick={() => handleCheckInGuest(bk.code)}
+                              className="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[10.5px] font-semibold flex items-center gap-1 shadow-sm active:scale-95 transition-colors"
+                              title="Konfirmasi Check-In Tamu Hadir"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Check-In</span>
+                            </button>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                              Hadir
+                            </span>
+                          )}
+
+                          <a
+                            href={`https://wa.me/${bk.phone}?text=Halo%20${encodeURIComponent(
+                              bk.guest
+                            )},%20kami%20dari%20Homestay%20Rura%20Batak`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 sm:p-2 rounded-xl bg-white border border-[#e8e2d9] hover:bg-emerald-50 text-emerald-700 transition-colors"
+                            title="Chat Tamu via WA"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

@@ -181,9 +181,13 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
       purchasedAt: new Date().toISOString(),
     };
 
+    const travelerName =
+      (typeof window !== "undefined" && localStorage.getItem("sindar_user_name")) ||
+      "Budi Pratama";
+
     const newTrx = {
       trxId: `TRX-${bookingCode}`,
-      traveler: "Christofer Sitinjak",
+      traveler: travelerName,
       item: `${participants}x ${exp.title}`,
       amount: `Rp ${totalCost.toLocaleString("id-ID")}`,
       channel: channelLabel,
