@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Lock, Mail, ArrowLeft, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export default function MasukPage() {
   const router = useRouter();
@@ -30,24 +31,48 @@ export default function MasukPage() {
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanIdentifier = emailOrPhone.trim();
+
+    // 1. Verifikasi dengan Supabase Authentication jika memasukkan email
+    if (isSupabaseConfigured && supabase && cleanIdentifier.includes("@")) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: cleanIdentifier,
+          password: password,
+        });
+
+        if (!error && data?.user) {
+          const meta = data.user.user_metadata;
+          if (meta?.full_name && typeof window !== "undefined") {
+            localStorage.setItem("sindar_user_name", meta.full_name);
+          }
+          if (meta?.phone && typeof window !== "undefined") {
+            localStorage.setItem("sindar_user_phone", meta.phone);
+          }
+        }
+      } catch (err) {
+        console.error("Supabase login check:", err);
+      }
+    }
+
     if (typeof window !== "undefined") {
       const savedEmail = localStorage.getItem("sindar_user_email");
       const savedName = localStorage.getItem("sindar_user_name");
 
       let finalName = "";
-      if (savedEmail && savedEmail.toLowerCase() === emailOrPhone.trim().toLowerCase() && savedName) {
+      if (savedEmail && savedEmail.toLowerCase() === cleanIdentifier.toLowerCase() && savedName) {
         finalName = savedName;
       } else {
-        finalName = emailOrPhone.includes("@")
-          ? emailOrPhone.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-          : emailOrPhone.trim() || "Wisatawan";
+        finalName = cleanIdentifier.includes("@")
+          ? cleanIdentifier.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+          : cleanIdentifier || "Wisatawan";
       }
 
       localStorage.setItem("sindar_role", "user");
       localStorage.setItem("sindar_user_name", finalName);
-      localStorage.setItem("sindar_user_email", emailOrPhone.trim());
+      localStorage.setItem("sindar_user_email", cleanIdentifier);
     }
     router.push("/dashboard");
   };

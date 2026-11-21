@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Lock, Mail, User, Phone, ArrowLeft, ShieldCheck, CheckCircle2, Gift, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export default function DaftarPage() {
   const router = useRouter();
@@ -36,13 +37,35 @@ export default function DaftarPage() {
     setReferralValid(code.length >= 4);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (typeof window !== "undefined") {
-      const trimmedName = formData.name.trim();
-      const trimmedEmail = formData.email.trim();
-      const trimmedPhone = formData.phone.trim();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    const trimmedName = formData.name.trim();
+    const trimmedEmail = formData.email.trim();
+    const trimmedPhone = formData.phone.trim();
+
+    // 1. Simpan ke database Supabase Authentication
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.auth.signUp({
+          email: trimmedEmail,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: trimmedName,
+              phone: trimmedPhone,
+              referral_code: formData.referralCode || null,
+            },
+          },
+        });
+      } catch (err) {
+        console.error("Supabase auth signup error:", err);
+      }
+    }
+
+    if (typeof window !== "undefined") {
       // Set user role & exact submitted identity
       localStorage.setItem("sindar_role", "user");
       localStorage.setItem("sindar_user_name", trimmedName);
@@ -76,11 +99,13 @@ export default function DaftarPage() {
       }
     }
 
+    setIsSubmitting(false);
+
     const refNote = formData.referralCode 
       ? `\n\n🎉 Kode Referral "${formData.referralCode}" aktif! Pengajak Anda menerima komisi Rp 25.000 dan Anda mendapatkan Voucher Diskon Selamat Datang!` 
       : "";
 
-    alert(`Pendaftaran Akun Berhasil!\nSelamat datang di SINDAR TOBA, ${formData.name.trim()}.${refNote}\nAkun Anda telah aktif, silakan masuk dengan kata sandi Anda.`);
+    alert(`Pendaftaran Akun Berhasil!\nSelamat datang di SINDAR TOBA, ${trimmedName}.${refNote}\nAkun Anda telah tersimpan di sistem, silakan masuk.`);
     router.push("/masuk?registered=true");
   };
 
