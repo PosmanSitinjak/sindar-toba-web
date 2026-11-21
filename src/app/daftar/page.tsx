@@ -72,10 +72,12 @@ export default function DaftarPage() {
       localStorage.setItem("sindar_user_phone", trimmedPhone);
       localStorage.setItem("sindar_user_email", trimmedEmail);
 
-      // Pastikan akun baru mulai bersih tanpa tiket atau komisi dari sesi sebelumnya
+      // Pastikan akun baru mulai bersih tanpa tiket, komisi, itinerary, atau favorit dari sesi sebelumnya
       localStorage.removeItem("sindar_purchased_tickets");
       localStorage.removeItem("sindar_referral_balance");
       localStorage.removeItem("sindar_referrals_data");
+      localStorage.removeItem("sindar_wishlist");
+      localStorage.removeItem("sindar_itineraries");
 
       // Save referral tracking if code was used
       if (formData.referralCode) {

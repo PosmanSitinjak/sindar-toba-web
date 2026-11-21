@@ -77,6 +77,8 @@ export default function Navbar() {
       localStorage.removeItem("sindar_purchased_tickets");
       localStorage.removeItem("sindar_referral_balance");
       localStorage.removeItem("sindar_referrals_data");
+      localStorage.removeItem("sindar_wishlist");
+      localStorage.removeItem("sindar_itineraries");
       localStorage.removeItem("sindar_current_mitra");
     }
     setAuthRole("guest");

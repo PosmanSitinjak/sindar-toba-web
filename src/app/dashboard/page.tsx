@@ -137,6 +137,8 @@ export default function DashboardWisatawanPage() {
       localStorage.removeItem("sindar_purchased_tickets");
       localStorage.removeItem("sindar_referral_balance");
       localStorage.removeItem("sindar_referrals_data");
+      localStorage.removeItem("sindar_wishlist");
+      localStorage.removeItem("sindar_itineraries");
     }
     router.push("/masuk");
   };
@@ -218,48 +220,33 @@ export default function DashboardWisatawanPage() {
     }
   }, []);
 
-  const savedItineraries = [
-    {
-      id: "itin-01",
-      title: "3 Hari 2 Malam: Kaldera Agung & Warisan Leluhur Samosir",
-      duration: "3 Hari 2 Malam",
-      stops: 6,
-      estimatedCost: "Rp 1.850.000 / org",
-      createdDate: "12 November 2026",
-      route: "Silangit → Parapat → Tomok → Holbung → Tuk-tuk",
-    },
-  ];
+  const [savedItineraries, setSavedItineraries] = useState<any[]>([]);
+  const [wishlistItems, setWishlistItems] = useState<any[]>([]);
 
-  const wishlistItems = [
-    {
-      id: "desa-tomok",
-      name: "Desa Wisata Tomok & Sigale-gale",
-      region: "Pulau Samosir",
-      price: "Rp 25.000",
-      image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      id: "kopi-lintong-specialty",
-      name: "Kopi Arabika Lintong Specialty 250g",
-      region: "Humbang Hasundutan",
-      price: "Rp 95.000",
-      image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      id: "lembah-bakkara",
-      name: "Lembah Bakkara & Aek Sipangolu",
-      region: "Humbang Hasundutan",
-      price: "Rp 20.000",
-      image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      id: "ulos-harungguan",
-      name: "Kain Tenun Ulos Harungguan Suhi-suhi",
-      region: "Samosir",
-      price: "Rp 850.000",
-      image: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=600&q=80",
-    },
-  ];
+  // Sync saved itineraries & wishlist from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedItin = localStorage.getItem("sindar_itineraries");
+        if (storedItin) {
+          const parsed = JSON.parse(storedItin);
+          if (Array.isArray(parsed)) setSavedItineraries(parsed);
+        } else {
+          setSavedItineraries([]);
+        }
+
+        const storedWish = localStorage.getItem("sindar_wishlist");
+        if (storedWish) {
+          const parsed = JSON.parse(storedWish);
+          if (Array.isArray(parsed)) setWishlistItems(parsed);
+        } else {
+          setWishlistItems([]);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#faf8f5]">
@@ -547,36 +534,61 @@ export default function DashboardWisatawanPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-              {savedItineraries.map((itin) => (
-                <div
-                  key={itin.id}
-                  className="bg-white border border-[#e8e2d9] rounded-2xl p-5 sm:p-6 shadow-sm space-y-3.5"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-[#c29d59]/20 text-[#b8653a] text-[10px] font-bold uppercase tracking-wider">
-                        {itin.duration}
-                      </span>
-                      <h3 className="font-newsreader text-lg sm:text-xl font-semibold text-[#1a3a34] mt-1.5">
-                        {itin.title}
-                      </h3>
-                      <p className="text-[12px] text-[#575e5b] mt-1">{itin.route}</p>
+            {savedItineraries.length === 0 ? (
+              <div className="bg-white border border-[#e8e2d9] rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-[#1a3a34]/10 text-[#c29d59] mx-auto flex items-center justify-center">
+                  <Compass className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="font-newsreader text-2xl font-bold text-[#1a3a34]">
+                    Belum Ada Rencana Perjalanan
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#575e5b] max-w-md mx-auto mt-1">
+                    Anda belum membuat itinerary. Susun rute liburan kaldera Danau Toba impian Anda dengan estimasi biaya otomatis.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Link
+                    href="/rencana-perjalanan"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md active:scale-95"
+                  >
+                    <span>Mulai Susun Rencana</span>
+                    <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                {savedItineraries.map((itin) => (
+                  <div
+                    key={itin.id}
+                    className="bg-white border border-[#e8e2d9] rounded-2xl p-5 sm:p-6 shadow-sm space-y-3.5"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#c29d59]/20 text-[#b8653a] text-[10px] font-bold uppercase tracking-wider">
+                          {itin.duration}
+                        </span>
+                        <h3 className="font-newsreader text-lg sm:text-xl font-semibold text-[#1a3a34] mt-1.5">
+                          {itin.title}
+                        </h3>
+                        <p className="text-[12px] text-[#575e5b] mt-1">{itin.route}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#e8e2d9]/60 flex items-center justify-between text-[12px]">
+                      <span className="text-[#575e5b]">Perkiraan: {itin.estimatedCost}</span>
+                      <Link
+                        href="/rencana-perjalanan"
+                        className="font-semibold text-[#1a3a34] hover:text-[#b8653a]"
+                      >
+                        Lihat Rute →
+                      </Link>
                     </div>
                   </div>
-
-                  <div className="pt-3 border-t border-[#e8e2d9]/60 flex items-center justify-between text-[12px]">
-                    <span className="text-[#575e5b]">Perkiraan: {itin.estimatedCost}</span>
-                    <Link
-                      href="/rencana-perjalanan"
-                      className="font-semibold text-[#1a3a34] hover:text-[#b8653a]"
-                    >
-                      Lihat Rute →
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -586,35 +598,61 @@ export default function DashboardWisatawanPage() {
             <h2 className="font-newsreader text-xl sm:text-2xl font-semibold text-[#1a3a34]">
               Destinasi & Produk Favorit Anda
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {wishlistItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white border border-[#e8e2d9] rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between"
-                >
-                  <div className="relative h-44 w-full">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="p-4 flex flex-col flex-grow justify-between">
-                    <div>
-                      <span className="text-[10px] text-[#575e5b] block">{item.region}</span>
-                      <h4 className="font-newsreader text-base font-semibold text-[#1a3a34] leading-snug mt-0.5 mb-2">
-                        {item.name}
-                      </h4>
-                    </div>
-                    <div className="pt-2 border-t border-[#e8e2d9]/60 flex justify-between items-center text-[12px]">
-                      <span className="font-bold text-[#1a3a34]">{item.price}</span>
-                      <Link
-                        href={`/destinasi/${item.id}`}
-                        className="font-semibold text-[#b8653a] hover:underline"
-                      >
-                        Buka Detail
-                      </Link>
-                    </div>
-                  </div>
+
+            {wishlistItems.length === 0 ? (
+              <div className="bg-white border border-[#e8e2d9] rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-[#1a3a34]/10 text-[#c29d59] mx-auto flex items-center justify-center">
+                  <Heart className="w-8 h-8" />
                 </div>
-              ))}
-            </div>
+                <div>
+                  <h3 className="font-newsreader text-2xl font-bold text-[#1a3a34]">
+                    Belum Ada Destinasi Favorit
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#575e5b] max-w-md mx-auto mt-1">
+                    Anda belum menyimpan geosite atau produk kriya lokal ke daftar favorit. Tandai tempat yang ingin Anda kunjungi saat menjelajahi kaldera.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Link
+                    href="/jelajahi"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md active:scale-95"
+                  >
+                    <span>Jelajahi Sekarang</span>
+                    <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {wishlistItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-white border border-[#e8e2d9] rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between"
+                  >
+                    <div className="relative h-44 w-full">
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-4 flex flex-col flex-grow justify-between">
+                      <div>
+                        <span className="text-[10px] text-[#575e5b] block">{item.region}</span>
+                        <h4 className="font-newsreader text-base font-semibold text-[#1a3a34] leading-snug mt-0.5 mb-2">
+                          {item.name}
+                        </h4>
+                      </div>
+                      <div className="pt-2 border-t border-[#e8e2d9]/60 flex justify-between items-center text-[12px]">
+                        <span className="font-bold text-[#1a3a34]">{item.price}</span>
+                        <Link
+                          href={`/destinasi/${item.id}`}
+                          className="font-semibold text-[#b8653a] hover:underline"
+                        >
+                          Buka Detail
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
