@@ -80,8 +80,8 @@ export default function DaftarPage() {
       ? `\n\n🎉 Kode Referral "${formData.referralCode}" aktif! Pengajak Anda menerima komisi Rp 25.000 dan Anda mendapatkan Voucher Diskon Selamat Datang!` 
       : "";
 
-    alert(`Pendaftaran Akun Berhasil!\nSelamat datang di SINDAR TOBA, ${formData.name.trim()}.${refNote}\nE-Tiket dan akun wisatawan Anda telah siap.`);
-    router.push("/dashboard");
+    alert(`Pendaftaran Akun Berhasil!\nSelamat datang di SINDAR TOBA, ${formData.name.trim()}.${refNote}\nAkun Anda telah aktif, silakan masuk dengan kata sandi Anda.`);
+    router.push("/masuk?registered=true");
   };
 
   return (

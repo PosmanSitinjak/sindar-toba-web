@@ -4,18 +4,28 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowRight, Lock, Mail, ArrowLeft, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export default function MasukPage() {
   const router = useRouter();
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [isJustRegistered, setIsJustRegistered] = useState(false);
+  const [registeredName, setRegisteredName] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("registered") === "true") {
+        setIsJustRegistered(true);
+      }
       const savedEmail = localStorage.getItem("sindar_user_email");
+      const savedName = localStorage.getItem("sindar_user_name");
       if (savedEmail) {
         setEmailOrPhone(savedEmail);
+      }
+      if (savedName) {
+        setRegisteredName(savedName);
       }
     }
   }, []);
@@ -121,6 +131,21 @@ export default function MasukPage() {
               atau dengan email / wa
             </span>
           </div>
+
+          {/* Banner Pendaftaran Berhasil */}
+          {isJustRegistered && (
+            <div className="mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[12.5px] flex items-start gap-3 shadow-sm animate-in fade-in">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block text-emerald-950 text-[13px]">
+                  Pendaftaran Akun Berhasil{registeredName ? `, ${registeredName}` : ""}!
+                </span>
+                <span className="text-[11.5px] text-emerald-800 leading-snug block mt-0.5">
+                  Akun Anda telah terdaftar. Silakan masukkan kata sandi Anda di bawah untuk masuk ke dashboard.
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
