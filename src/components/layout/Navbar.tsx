@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { clearActiveUserSession } from "@/lib/auth";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
   Globe,
   User,
@@ -85,19 +87,10 @@ export default function Navbar() {
   }, [mobileMenuOpen]);
 
   const handleLogout = (role: "mitra" | "user") => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("sindar_role");
-      localStorage.removeItem("sindar_mitra_name");
-      localStorage.removeItem("sindar_user_name");
-      localStorage.removeItem("sindar_user_email");
-      localStorage.removeItem("sindar_user_phone");
-      localStorage.removeItem("sindar_purchased_tickets");
-      localStorage.removeItem("sindar_referral_balance");
-      localStorage.removeItem("sindar_referrals_data");
-      localStorage.removeItem("sindar_wishlist");
-      localStorage.removeItem("sindar_itineraries");
-      localStorage.removeItem("sindar_current_mitra");
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.signOut().catch(() => {});
     }
+    clearActiveUserSession();
     setAuthRole("guest");
     setUserName("");
     if (role === "mitra") {

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import PaymentModal from "@/components/checkout/PaymentModal";
 import Link from "next/link";
 import {
   Clock,
@@ -22,6 +23,7 @@ export default function RencanaPerjalananPage() {
   const [travelStyle, setTravelStyle] = useState("budaya");
   const [groupType, setGroupType] = useState("pasangan");
   const [budgetLevel, setBudgetLevel] = useState("nyaman");
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const dayPlans = [
     {
@@ -117,7 +119,7 @@ export default function RencanaPerjalananPage() {
     <div className="flex flex-col min-h-screen bg-[#faf8f5]">
       <Navbar />
 
-      <main className="flex-grow">
+      <main className="flex-grow pb-24 lg:pb-0">
         {/* Header Container */}
         <section className="bg-[#1a3a34] text-white pt-12 pb-16 sm:pt-16 sm:pb-20 px-4 sm:px-6 lg:px-8 border-b border-[#c29d59]/30 relative overflow-hidden">
           <div className="max-w-[1280px] mx-auto relative z-10 flex flex-col items-center text-center">
@@ -364,9 +366,8 @@ export default function RencanaPerjalananPage() {
 
               <div className="mt-5 space-y-2.5">
                 <button
-                  onClick={() =>
-                    alert("Seluruh pemesanan itinerary ini siap dihubungkan ke pembayaran aman!")
-                  }
+                  type="button"
+                  onClick={() => setIsPaymentModalOpen(true)}
                   className="w-full py-3 sm:py-3.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-semibold text-[12.5px] uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
                 >
                   <span>Pesan Semua Paket</span>
@@ -390,6 +391,41 @@ export default function RencanaPerjalananPage() {
           </div>
         </section>
       </main>
+
+      {/* Mobile Floating Bottom Booking Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#e8e2d9] pt-3.5 px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] flex items-center justify-between lg:hidden shadow-lg">
+        <div>
+          <span className="text-[10px] text-[#575e5b] block">Estimasi Paket ({duration})</span>
+          <span className="font-cinzel text-lg font-bold text-[#1a3a34]">Rp 3.180.000</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsPaymentModalOpen(true)}
+          className="px-6 py-2.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[12px] font-semibold uppercase tracking-wider shadow-sm flex items-center gap-1.5 active:scale-95"
+        >
+          <span>Pesan Sekarang</span>
+          <ArrowRight className="w-3.5 h-3.5 text-[#c29d59]" />
+        </button>
+      </div>
+
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        item={{
+          id: `itinerary-${duration.toLowerCase()}`,
+          title: `Paket Itinerary Kaldera Toba (${duration})`,
+          geositeLabel: "Paket Wisata Terpadu",
+          visitDate: new Date().toISOString().split("T")[0],
+          visitTime: `${duration} • Fleksibel`,
+          visitorsCount: groupType === "solo" ? 1 : groupType === "pasangan" ? 2 : 4,
+          visitorsLabel: groupType === "solo" ? "1 Peserta" : groupType === "pasangan" ? "2 Peserta" : "3-5 Peserta",
+          addons: ["6 Geosite", "Transportasi + Driver", "Homestay 2 Malam", "Tur Solu Bolon"],
+          totalAmount: 3180000,
+          location: "Kawasan Kaldera Danau Toba",
+          organizerName: "Concierge Resmi SINDAR TOBA",
+          organizerPhone: "6281234567890",
+        }}
+      />
 
       <Footer />
     </div>

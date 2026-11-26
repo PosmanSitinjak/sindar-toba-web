@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { clearActiveUserSession } from "@/lib/auth";
 import {
   Ticket,
   Calendar,
@@ -81,7 +82,7 @@ export default function DashboardWisatawanPage() {
         }
       }
     }
-  }, []);
+  }, [router]);
 
   const handleCopyCode = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -91,9 +92,12 @@ export default function DashboardWisatawanPage() {
     }
   };
 
+  const getReferralBaseUrl = () =>
+    typeof window !== "undefined" ? window.location.origin : "https://sindar-toba-web.vercel.app";
+
   const handleCopyLink = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      const link = `https://sindar-toba-web.vercel.app/daftar?ref=${referralCode}`;
+      const link = `${getReferralBaseUrl()}/daftar?ref=${referralCode}`;
       navigator.clipboard.writeText(link);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
@@ -102,7 +106,7 @@ export default function DashboardWisatawanPage() {
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `Horas! Yuk jelajahi keindahan Danau Toba & budaya Batak bersama SINDAR TOBA.\n\nDaftar pakai kode referalku "${referralCode}" untuk dapatkan voucher sambutan spesial & e-tiket resmi kaldera:\nhttps://sindar-toba-web.vercel.app/daftar?ref=${referralCode}`
+      `Horas! Yuk jelajahi keindahan Danau Toba & budaya Batak bersama SINDAR TOBA.\n\nDaftar pakai kode referalku "${referralCode}" untuk dapatkan voucher sambutan spesial & e-tiket resmi kaldera:\n${getReferralBaseUrl()}/daftar?ref=${referralCode}`
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
@@ -129,17 +133,10 @@ export default function DashboardWisatawanPage() {
   };
 
   const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("sindar_role");
-      localStorage.removeItem("sindar_user_name");
-      localStorage.removeItem("sindar_user_email");
-      localStorage.removeItem("sindar_user_phone");
-      localStorage.removeItem("sindar_purchased_tickets");
-      localStorage.removeItem("sindar_referral_balance");
-      localStorage.removeItem("sindar_referrals_data");
-      localStorage.removeItem("sindar_wishlist");
-      localStorage.removeItem("sindar_itineraries");
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.signOut().catch(() => {});
     }
+    clearActiveUserSession();
     router.push("/masuk");
   };
 
@@ -157,9 +154,14 @@ export default function DashboardWisatawanPage() {
 
   const [activeTickets, setActiveTickets] = useState<any[]>(initialTickets);
 
-  // Sync profile & tickets from LocalStorage & Supabase
+  // Guard dashboard: wajib masuk akun terlebih dahulu
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const role = localStorage.getItem("sindar_role");
+      if (role !== "user") {
+        router.replace("/masuk");
+        return;
+      }
       const storedName = localStorage.getItem("sindar_user_name");
       const storedEmail = localStorage.getItem("sindar_user_email");
       const storedPhone = localStorage.getItem("sindar_user_phone");
@@ -218,7 +220,7 @@ export default function DashboardWisatawanPage() {
           }
         });
     }
-  }, []);
+  }, [router]);
 
   const [savedItineraries, setSavedItineraries] = useState<any[]>([]);
   const [wishlistItems, setWishlistItems] = useState<any[]>([]);
@@ -246,7 +248,7 @@ export default function DashboardWisatawanPage() {
         console.error(e);
       }
     }
-  }, []);
+  }, [router]);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#faf8f5]">
@@ -423,8 +425,10 @@ export default function DashboardWisatawanPage() {
                         </div>
                         <span
                           className={`px-2.5 py-0.5 rounded-full border text-[10.5px] font-semibold ${
-                            tkt.status?.toLowerCase().includes("selesai") ||
-                            tkt.status?.toLowerCase().includes("digunakan")
+                            tkt.status?.toLowerCase().includes("menunggu")
+                              ? "bg-amber-50 border-amber-200 text-amber-800"
+                              : tkt.status?.toLowerCase().includes("selesai") ||
+                                (tkt.status?.toLowerCase().includes("digunakan") && !tkt.status?.toLowerCase().includes("lunas"))
                               ? "bg-stone-100 border-stone-300 text-stone-600 font-bold"
                               : "bg-emerald-50 border-emerald-200 text-emerald-800"
                           }`}
@@ -748,7 +752,7 @@ export default function DashboardWisatawanPage() {
                         TAUTAN UNDANGAN LANGSUNG
                       </span>
                       <span className="text-xs text-white/90 truncate block">
-                        sindar-toba-web.vercel.app/daftar?ref={referralCode}
+                        {`${getReferralBaseUrl().replace(/^https?:\/\//, "")}/daftar?ref=${referralCode}`}
                       </span>
                     </div>
                     <button

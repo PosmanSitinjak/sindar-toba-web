@@ -292,7 +292,11 @@ export default function SuperadminDashboardPage() {
               item: `${d.visitors}x ${d.destination_name}`,
               amount: `Rp ${Number(d.total_paid).toLocaleString("id-ID")}`,
               channel: "QRIS Dinamis",
-              escrowStatus: d.status?.includes("Selesai") ? "Siap Dicairkan ke Mitra" : "Tertahan di Escrow",
+              escrowStatus: d.status?.includes("Selesai")
+                ? "Siap Dicairkan ke Mitra"
+                : d.status?.includes("Menunggu")
+                ? "Menunggu Verifikasi Transfer"
+                : "Tertahan di Escrow",
               time: "Baru saja",
             }));
             const existing = new Set(list.map((l: any) => l.trxId));
@@ -322,6 +326,46 @@ export default function SuperadminDashboardPage() {
       partners.map((p) => (p.id === id ? { ...p, status: "Ditolak / Perlu Revisi" } : p))
     );
     showToast(`Mitra ${id} ditandai untuk revisi dokumen NIB/KTP.`);
+  };
+
+  const handleVerifyPayment = async (trxId: string) => {
+    const bookingCode = trxId.replace(/^TRX-/, "");
+    setRecentTransactions((prev) =>
+      prev.map((tx) =>
+        tx.trxId === trxId ? { ...tx, escrowStatus: "Tertahan di Escrow" } : tx
+      )
+    );
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase
+          .from("tickets")
+          .update({ status: "Lunas (Siap Digunakan)" })
+          .eq("booking_code", bookingCode);
+      } catch (err) {
+        console.error("Verify payment Supabase error:", err);
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const storedTkt = JSON.parse(localStorage.getItem("sindar_purchased_tickets") || "[]");
+        const updatedTkt = storedTkt.map((t: any) =>
+          t.bookingCode === bookingCode ? { ...t, status: "Lunas (Siap Digunakan)" } : t
+        );
+        localStorage.setItem("sindar_purchased_tickets", JSON.stringify(updatedTkt));
+
+        const storedTrx = JSON.parse(localStorage.getItem("sindar_transactions") || "[]");
+        const updatedTrx = storedTrx.map((tx: any) =>
+          tx.trxId === trxId ? { ...tx, escrowStatus: "Tertahan di Escrow" } : tx
+        );
+        localStorage.setItem("sindar_transactions", JSON.stringify(updatedTrx));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    showToast(`Pembayaran ${bookingCode} berhasil diverifikasi Lunas!`);
   };
 
   const filteredPartners =
@@ -773,9 +817,26 @@ export default function SuperadminDashboardPage() {
                         <td className="py-2.5 font-bold text-[#1a3a34]">{tx.amount}</td>
                         <td className="py-2.5 text-[#575e5b]">{tx.channel}</td>
                         <td className="py-2.5 text-right">
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[9.5px] font-bold">
-                            {tx.escrowStatus}
-                          </span>
+                          <div className="inline-flex items-center gap-2 justify-end">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold ${
+                                tx.escrowStatus?.toLowerCase().includes("menunggu")
+                                  ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                  : "bg-emerald-50 text-emerald-800"
+                              }`}
+                            >
+                              {tx.escrowStatus}
+                            </span>
+                            {tx.escrowStatus?.toLowerCase().includes("menunggu") && (
+                              <button
+                                type="button"
+                                onClick={() => handleVerifyPayment(tx.trxId)}
+                                className="px-2.5 py-1 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-[9.5px] font-bold uppercase tracking-wider transition-colors"
+                              >
+                                Verifikasi Lunas
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

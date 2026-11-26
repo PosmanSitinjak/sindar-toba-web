@@ -4,7 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Phone, Lock, CheckCircle2, KeyRound, ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Mail, Lock, CheckCircle2, KeyRound, ArrowRight } from "lucide-react";
+import { findRegisteredUser, resetTravelerPassword } from "@/lib/auth";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export default function LupaSandiPage() {
   const router = useRouter();
@@ -15,24 +17,35 @@ export default function LupaSandiPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleRequestReset = (e: React.FormEvent) => {
+  const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier.trim()) {
+    const cleanId = identifier.trim();
+    if (!cleanId) {
       setErrorMessage("Silakan masukkan email atau nomor WhatsApp Anda.");
+      return;
+    }
+    if (isSupabaseConfigured && supabase && cleanId.includes("@")) {
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanId);
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+    } else if (!findRegisteredUser(cleanId)) {
+      setErrorMessage("Email atau nomor WhatsApp belum terdaftar. Silakan daftar terlebih dahulu.");
       return;
     }
     setErrorMessage(null);
     setStep("verify");
   };
 
-  const handleVerifyReset = (e: React.FormEvent) => {
+  const handleVerifyReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otpCode.trim()) {
+    if (!otpCode.trim() || otpCode.trim().length < 6) {
       setErrorMessage("Silakan masukkan kode verifikasi 6 digit.");
       return;
     }
-    if (newPassword.length < 6) {
-      setErrorMessage("Kata sandi baru minimal 6 karakter.");
+    if (newPassword.length < 8) {
+      setErrorMessage("Kata sandi baru minimal 8 karakter.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -40,15 +53,10 @@ export default function LupaSandiPage() {
       return;
     }
 
-    // Simpan kata sandi baru secara instan ke localStorage
-    if (typeof window !== "undefined") {
-      localStorage.setItem("sindar_user_password", newPassword);
-      localStorage.setItem("sindar_user_email", identifier);
-      localStorage.setItem("sindar_role", "user");
-      const cleanName = identifier.includes("@")
-        ? identifier.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-        : identifier || "Wisatawan";
-      localStorage.setItem("sindar_user_name", cleanName);
+    const res = await resetTravelerPassword({ identifier, newPassword });
+    if (!res.ok) {
+      setErrorMessage(res.error || "Gagal memperbarui kata sandi.");
+      return;
     }
 
     setErrorMessage(null);
@@ -237,18 +245,12 @@ export default function LupaSandiPage() {
                 Kata sandi baru Anda telah aktif. Anda kini dapat masuk kembali ke akun SINDAR TOBA Anda.
               </p>
               <div className="space-y-3">
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  className="w-full py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[12px] font-semibold uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
-                >
-                  <span>Masuk Langsung ke Dashboard</span>
-                  <ArrowRight className="w-4 h-4 text-[#c29d59]" />
-                </button>
                 <Link
                   href="/masuk"
-                  className="w-full py-2.5 rounded-full border border-[#e8e2d9] hover:bg-[#faf8f5] text-[12px] font-semibold text-[#1a3a34] uppercase tracking-wider transition-colors flex items-center justify-center"
+                  className="w-full py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[12px] font-semibold uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
                 >
-                  Ke Halaman Masuk
+                  <span>Masuk dengan Kata Sandi Baru</span>
+                  <ArrowRight className="w-4 h-4 text-[#c29d59]" />
                 </Link>
               </div>
             </div>
