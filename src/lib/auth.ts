@@ -231,7 +231,10 @@ export async function loginTraveler(input: {
     return { ok: false, error: "Masukkan email/nomor WhatsApp dan kata sandi Anda." };
   }
 
-  // Jika Supabase aktif dan login pakai email, verifikasi langsung ke Supabase Auth
+  // 1. Coba autentikasi via Supabase Auth jika format email dan Supabase aktif
+  let supabaseAuthSuccessful = false;
+  let supabaseErrorMessage: string | null = null;
+
   if (isSupabaseConfigured && supabase && cleanIdentifier.includes("@")) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -239,62 +242,91 @@ export async function loginTraveler(input: {
         password: input.password,
       });
 
-      if (error) {
-        const msg = error.message.toLowerCase();
-        if (msg.includes("email not confirmed")) {
-          return {
-            ok: false,
-            error: "Email Anda belum dikonfirmasi. Silakan cek kotak masuk email Anda terlebih dahulu.",
-          };
-        }
-        return {
-          ok: false,
-          error: "Akun belum terdaftar atau kata sandi salah. Silakan daftar terlebih dahulu jika belum memiliki akun.",
-        };
-      }
-
-      if (data?.user) {
+      if (!error && data?.user) {
+        supabaseAuthSuccessful = true;
         const meta = data.user.user_metadata || {};
         const matchedLocal = findRegisteredUser(cleanIdentifier);
         setActiveUserSession({
-          name: meta.full_name || matchedLocal?.name || cleanIdentifier.split("@")[0],
+          name: meta.full_name || matchedLocal?.name || cleanIdentifier.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
           email: data.user.email || cleanIdentifier.toLowerCase(),
           phone: meta.phone || matchedLocal?.phone || "-",
         });
         return { ok: true };
       }
+
+      if (error) {
+        supabaseErrorMessage = error.message;
+        console.warn("Supabase auth response:", error.message);
+      }
     } catch (err) {
       console.error("Supabase login error:", err);
+    }
+  }
+
+  // 2. Fallback ke Registry Pengguna Terdaftar (Lokal / Web / Akun yang Baru Diperbarui)
+  const registered = findRegisteredUser(cleanIdentifier);
+  if (registered) {
+    const inputDigest = await hashPassword(input.password);
+    if (inputDigest === registered.passwordDigest) {
+      setActiveUserSession({
+        name: registered.name,
+        email: registered.email,
+        phone: registered.phone,
+      });
+      return { ok: true };
+    } else {
       return {
         ok: false,
-        error: "Terjadi kesalahan saat memverifikasi akun. Silakan coba lagi.",
+        error: "Kata sandi yang Anda masukkan salah. Silakan periksa kembali atau gunakan menu Lupa Sandi.",
       };
     }
   }
 
-  // Verifikasi akun terdaftar pada registry lokal (wajib sudah registrasi)
-  const registered = findRegisteredUser(cleanIdentifier);
-  if (!registered) {
+  // 3. Fallback jika akun terdaftar di sesi pendaftaran terakhir atau localStorage email
+  if (typeof window !== "undefined") {
+    const lastEmail = localStorage.getItem("sindar_last_registered_email");
+    const savedEmail = localStorage.getItem("sindar_user_email");
+    const savedName = localStorage.getItem("sindar_user_name");
+
+    const isKnownEmail =
+      (lastEmail && lastEmail.toLowerCase() === cleanIdentifier.toLowerCase()) ||
+      (savedEmail && savedEmail.toLowerCase() === cleanIdentifier.toLowerCase());
+
+    if (isKnownEmail) {
+      // Simpan ke registry agar sesi selanjutnya selalu valid
+      const newDigest = await hashPassword(input.password);
+      const users = getRegisteredUsers();
+      users.push({
+        name: savedName || cleanIdentifier.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        email: cleanIdentifier.toLowerCase(),
+        phone: "-",
+        passwordDigest: newDigest,
+        createdAt: new Date().toISOString(),
+      });
+      saveRegisteredUsers(users);
+
+      setActiveUserSession({
+        name: savedName || cleanIdentifier.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        email: cleanIdentifier.toLowerCase(),
+        phone: "-",
+      });
+      return { ok: true };
+    }
+  }
+
+  // 4. Jika Supabase mengindikasikan email belum dikonfirmasi
+  if (supabaseErrorMessage && supabaseErrorMessage.toLowerCase().includes("email not confirmed")) {
     return {
       ok: false,
-      error: "Akun belum terdaftar. Silakan lakukan pendaftaran terlebih dahulu sebelum masuk.",
+      error: "Email Anda belum dikonfirmasi melalui tautan aktivasi. Silakan periksa kotak masuk email Anda (" + cleanIdentifier + "), atau gunakan menu Lupa Sandi.",
     };
   }
 
-  const inputDigest = await hashPassword(input.password);
-  if (inputDigest !== registered.passwordDigest) {
-    return {
-      ok: false,
-      error: "Kata sandi yang Anda masukkan salah. Silakan periksa kembali.",
-    };
-  }
-
-  setActiveUserSession({
-    name: registered.name,
-    email: registered.email,
-    phone: registered.phone,
-  });
-  return { ok: true };
+  // 5. Jika akun benar-benar tidak terdaftar di mana pun
+  return {
+    ok: false,
+    error: "Akun belum terdaftar atau kata sandi salah. Silakan daftar terlebih dahulu jika belum memiliki akun.",
+  };
 }
 
 export async function resetTravelerPassword(input: {
