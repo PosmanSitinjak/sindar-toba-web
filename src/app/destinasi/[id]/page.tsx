@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   ArrowRight,
+  ArrowLeft,
   Sparkles,
   ThumbsUp,
   MessageSquare,
