@@ -102,9 +102,19 @@ export const fallbackDestinations: Destination[] = [
   },
 ];
 
+function applyLocalPhotoOverrides(items: Destination[]): Destination[] {
+  if (typeof window === "undefined") return items;
+  try {
+    const overrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_photos") || "{}") as Record<string, string>;
+    return items.map((item) => (overrides[item.id] ? { ...item, image: overrides[item.id] } : item));
+  } catch {
+    return items;
+  }
+}
+
 export async function fetchDestinations(): Promise<Destination[]> {
   if (!isSupabaseConfigured || !supabase) {
-    return fallbackDestinations;
+    return applyLocalPhotoOverrides(fallbackDestinations);
   }
 
   try {
@@ -115,14 +125,14 @@ export async function fetchDestinations(): Promise<Destination[]> {
 
     if (error) {
       console.warn("Supabase query error, falling back to local data:", error.message);
-      return fallbackDestinations;
+      return applyLocalPhotoOverrides(fallbackDestinations);
     }
 
     if (!data || data.length === 0) {
-      return fallbackDestinations;
+      return applyLocalPhotoOverrides(fallbackDestinations);
     }
 
-    return data.map((d: any) => ({
+    const mapped = data.map((d: any) => ({
       id: d.id,
       title: d.title,
       category: d.category,
@@ -136,7 +146,8 @@ export async function fetchDestinations(): Promise<Destination[]> {
       description: d.description,
       tags: d.tags || [],
     }));
+    return applyLocalPhotoOverrides(mapped);
   } catch {
-    return fallbackDestinations;
+    return applyLocalPhotoOverrides(fallbackDestinations);
   }
 }

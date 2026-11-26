@@ -26,8 +26,13 @@ import {
   Database,
   QrCode,
   Camera,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
 
+import PhotoUploadField, {
+  compressImageToDataUrl,
+} from "@/components/mitra/PhotoUploadField";
 import { PRESET_MITRA_LIST } from "@/lib/mitra";
 
 interface ListingItem {
@@ -37,6 +42,8 @@ interface ListingItem {
   price: string;
   quota: string;
   status: "Aktif" | "Nonaktif";
+  image?: string;
+  description?: string;
 }
 
 export default function DashboardMitraPage() {
@@ -66,6 +73,7 @@ export default function DashboardMitraPage() {
       price: "Rp 350.000 / malam",
       quota: "3 Kamar Tersedia",
       status: "Aktif",
+      image: "/images/destinations/desa-tomok.jpg",
     },
     {
       id: "LIST-02",
@@ -74,8 +82,16 @@ export default function DashboardMitraPage() {
       price: "Rp 150.000 / orang",
       quota: "Maks. 8 orang / hari",
       status: "Aktif",
+      image: "/images/destinations/tenun-ulos.jpg",
     },
   ]);
+
+  // State: Property Photo Gallery (Mitra Profile)
+  const [businessGallery, setBusinessGallery] = useState<string[]>([
+    "/images/destinations/bukit-holbung.jpg",
+    "/images/destinations/desa-tomok.jpg",
+  ]);
+  const [isGalleryUploading, setIsGalleryUploading] = useState(false);
 
   // State: Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -131,8 +147,28 @@ export default function DashboardMitraPage() {
     showToast(`Beralih ke akun mitra: ${m.name}`);
   };
 
-  // Sync listings with Supabase destinations table
+  // Sync listings with Supabase destinations table & local photo overrides
   useEffect(() => {
+    let photoOverrides: Record<string, string> = {};
+    if (typeof window !== "undefined") {
+      try {
+        photoOverrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_photos") || "{}");
+      } catch {
+        photoOverrides = {};
+      }
+      try {
+        const storedGallery = localStorage.getItem(`sindar_mitra_gallery_${business.code}`);
+        if (storedGallery) {
+          const parsed = JSON.parse(storedGallery);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setBusinessGallery(parsed);
+          }
+        }
+      } catch {
+        // Ignore gallery parse errors
+      }
+    }
+
     if (isSupabaseConfigured && supabase) {
       supabase
         .from("destinations")
@@ -148,12 +184,61 @@ export default function DashboardMitraPage() {
                 price: d.price ? `Rp ${Number(d.price).toLocaleString("id-ID")} / ${d.price_unit || "orang"}` : "Gratis",
                 quota: "Tersedia",
                 status: "Aktif",
+                image: photoOverrides[d.id] || d.image || "/images/destinations/bukit-holbung.jpg",
+                description: d.description || "",
               }))
             );
           }
         });
     }
-  }, []);
+  }, [business.code]);
+
+  const saveListingPhotoOverride = (id: string, imageUrl?: string) => {
+    if (typeof window === "undefined" || !imageUrl) return;
+    try {
+      const current = JSON.parse(localStorage.getItem("sindar_mitra_listing_photos") || "{}");
+      current[id] = imageUrl;
+      localStorage.setItem("sindar_mitra_listing_photos", JSON.stringify(current));
+    } catch (err) {
+      console.error("Failed to save listing photo override:", err);
+    }
+  };
+
+  const handleBusinessGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsGalleryUploading(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of Array.from(files).slice(0, 4)) {
+        if (file.type.startsWith("image/")) {
+          const dataUrl = await compressImageToDataUrl(file, 900, 0.8);
+          uploadedUrls.push(dataUrl);
+        }
+      }
+      if (uploadedUrls.length > 0) {
+        const updated = [...uploadedUrls, ...businessGallery].slice(0, 8);
+        setBusinessGallery(updated);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`sindar_mitra_gallery_${business.code}`, JSON.stringify(updated));
+        }
+        showToast(`${uploadedUrls.length} foto properti berhasil ditambahkan ke galeri mitra!`);
+      }
+    } catch {
+      showToast("Gagal memproses unggahan foto.");
+    } finally {
+      setIsGalleryUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveGalleryPhoto = (index: number) => {
+    const updated = businessGallery.filter((_, i) => i !== index);
+    setBusinessGallery(updated);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`sindar_mitra_gallery_${business.code}`, JSON.stringify(updated));
+    }
+  };
 
   // Form State for Add Listing
   const [newTitle, setNewTitle] = useState("");
@@ -162,6 +247,7 @@ export default function DashboardMitraPage() {
   const [newUnit, setNewUnit] = useState("/ malam");
   const [newQuota, setNewQuota] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newImage, setNewImage] = useState("/images/destinations/bukit-holbung.jpg");
 
   // Form State for Withdraw
   const [withdrawAmount, setWithdrawAmount] = useState<string>("5250000");
@@ -182,6 +268,7 @@ export default function DashboardMitraPage() {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "") || `layanan-${Date.now()}`;
     const newId = generatedSlug;
+    const finalImage = newImage.trim() || "/images/destinations/bukit-holbung.jpg";
 
     const newEntry: ListingItem = {
       id: newId,
@@ -190,10 +277,13 @@ export default function DashboardMitraPage() {
       price: formattedPrice,
       quota: newQuota.trim(),
       status: "Aktif",
+      image: finalImage,
+      description: newDesc.trim(),
     };
 
     // Optimistic UI update
     setListings([newEntry, ...listings]);
+    saveListingPhotoOverride(newId, finalImage);
     setIsAddModalOpen(false);
 
     // Reset Form
@@ -201,6 +291,7 @@ export default function DashboardMitraPage() {
     setNewPrice("");
     setNewQuota("");
     setNewDesc("");
+    setNewImage("/images/destinations/bukit-holbung.jpg");
 
     // Execute insert in Supabase
     if (isSupabaseConfigured && supabase) {
@@ -215,7 +306,7 @@ export default function DashboardMitraPage() {
           reviews: 1,
           price: rawNum,
           price_unit: newUnit.replace(/\//g, "").trim(),
-          image: "/images/destinations/bukit-holbung.jpg",
+          image: finalImage,
           description: newDesc.trim() || `Layanan resmi terverifikasi BPODT oleh ${business.name}.`,
           tags: [newCategory, "Mitra Resmi"],
         });
@@ -224,13 +315,13 @@ export default function DashboardMitraPage() {
           console.error("Supabase insert error:", error);
           showToast(`Layanan tersimpan lokal (Supabase: ${error.message})`);
         } else {
-          showToast(`Layanan "${newEntry.title}" BERHASIL tersimpan di Database Supabase!`);
+          showToast(`Layanan & foto "${newEntry.title}" BERHASIL tersimpan di Database Supabase!`);
         }
       } catch (err: any) {
         console.error("Insert exception:", err);
       }
     } else {
-      showToast(`Layanan "${newEntry.title}" berhasil diterbitkan ke katalog!`);
+      showToast(`Layanan & foto "${newEntry.title}" berhasil diterbitkan ke katalog!`);
     }
   };
 
@@ -239,10 +330,13 @@ export default function DashboardMitraPage() {
     e.preventDefault();
     if (!editingListing) return;
 
+    const finalImage = editingListing.image?.trim() || "/images/destinations/bukit-holbung.jpg";
+    const updatedItem = { ...editingListing, image: finalImage };
+
     setListings(
-      listings.map((l) => (l.id === editingListing.id ? editingListing : l))
+      listings.map((l) => (l.id === updatedItem.id ? updatedItem : l))
     );
-    const updatedItem = editingListing;
+    saveListingPhotoOverride(updatedItem.id, finalImage);
     setEditingListing(null);
 
     if (isSupabaseConfigured && supabase) {
@@ -254,13 +348,14 @@ export default function DashboardMitraPage() {
             title: updatedItem.title,
             category: updatedItem.category,
             price: rawNum,
+            image: finalImage,
           })
           .eq("id", updatedItem.id);
 
         if (error) {
           console.error("Supabase update error:", error);
         } else {
-          showToast(`Perubahan "${updatedItem.title}" BERHASIL diupdate di Database Supabase!`);
+          showToast(`Perubahan & foto "${updatedItem.title}" BERHASIL diupdate di Database Supabase!`);
           return;
         }
       } catch (err) {
@@ -268,7 +363,7 @@ export default function DashboardMitraPage() {
       }
     }
 
-    showToast(`Perubahan pada "${updatedItem.title}" berhasil disimpan!`);
+    showToast(`Perubahan & foto pada "${updatedItem.title}" berhasil disimpan!`);
   };
 
   // Handle Delete Listing (Direct Supabase Cloud Deletion)
@@ -688,22 +783,34 @@ export default function DashboardMitraPage() {
                     key={lst.id}
                     className="p-4 sm:p-5 rounded-2xl border border-[#e8e2d9] bg-white hover:border-[#c29d59] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all"
                   >
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#b8653a]">
-                          {lst.category}
-                        </span>
-                        <span className="text-[10px] text-[#575e5b] font-mono">
-                          {lst.id}
-                        </span>
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-16 h-16 sm:w-20 sm:h-16 rounded-xl overflow-hidden bg-stone-100 border border-[#e8e2d9] shrink-0 relative">
+                        <img
+                          src={lst.image || "/images/destinations/bukit-holbung.jpg"}
+                          alt={lst.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = "/images/destinations/bukit-holbung.jpg";
+                          }}
+                        />
                       </div>
-                      <h4 className="font-newsreader text-base sm:text-lg font-semibold text-[#1a3a34] mb-1">
-                        {lst.title}
-                      </h4>
-                      <p className="text-[12px] text-[#575e5b]">
-                        Tarif: <strong className="text-[#1a3a34]">{lst.price}</strong> •{" "}
-                        {lst.quota}
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#b8653a]">
+                            {lst.category}
+                          </span>
+                          <span className="text-[10px] text-[#575e5b] font-mono">
+                            {lst.id}
+                          </span>
+                        </div>
+                        <h4 className="font-newsreader text-base sm:text-lg font-semibold text-[#1a3a34] mb-1">
+                          {lst.title}
+                        </h4>
+                        <p className="text-[12px] text-[#575e5b]">
+                          Tarif: <strong className="text-[#1a3a34]">{lst.price}</strong> •{" "}
+                          {lst.quota}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 self-start sm:self-auto">
@@ -830,7 +937,13 @@ export default function DashboardMitraPage() {
             </div>
 
             {/* Form Body */}
-            <form onSubmit={handleAddListing} className="p-5 sm:p-6 space-y-4">
+            <form onSubmit={handleAddListing} className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <PhotoUploadField
+                value={newImage}
+                onChange={setNewImage}
+                label="Foto Utama Layanan / Destinasi *"
+              />
+
               <div>
                 <label className="block text-xs font-semibold text-[#1a3a34] uppercase tracking-wider mb-1">
                   Kategori Layanan *
@@ -965,7 +1078,15 @@ export default function DashboardMitraPage() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateListing} className="p-5 sm:p-6 space-y-4">
+            <form onSubmit={handleUpdateListing} className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <PhotoUploadField
+                value={editingListing.image || "/images/destinations/bukit-holbung.jpg"}
+                onChange={(newImg) =>
+                  setEditingListing({ ...editingListing, image: newImg })
+                }
+                label="Foto Layanan Wisata"
+              />
+
               <div>
                 <label className="block text-xs font-semibold text-[#1a3a34] uppercase tracking-wider mb-1">
                   Nama Layanan
@@ -1240,16 +1361,55 @@ export default function DashboardMitraPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#575e5b] block mb-1">
-                    Galeri Foto Properti
-                  </label>
-                  <div className="p-4 rounded-xl border-2 border-dashed border-[#e8e2d9] bg-[#faf8f5] text-center text-xs text-[#575e5b]">
-                    <Building2 className="w-6 h-6 mx-auto mb-1 text-[#c29d59]" />
-                    <p className="font-medium text-[#1a3a34]">Foto Homestay & Kamar Aktif (4 Foto)</p>
-                    <p className="text-[11px] text-[#575e5b] mt-0.5">
-                      Untuk pembaruan foto berstandar kurasi BPODT, hubungi pendamping lapangan.
-                    </p>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-[#1a3a34]">
+                      Galeri Foto Properti ({businessGallery.length}/8 Foto)
+                    </label>
+                    <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[11px] font-semibold transition-colors">
+                      <Upload className="w-3 h-3 text-[#c29d59]" />
+                      <span>{isGalleryUploading ? "Mengunggah..." : "Tambah Foto"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleBusinessGalleryUpload}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
+
+                  {businessGallery.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-2">
+                      {businessGallery.map((photoUrl, idx) => (
+                        <div
+                          key={idx}
+                          className="relative aspect-square rounded-xl overflow-hidden border border-[#e8e2d9] bg-[#faf8f5] group"
+                        >
+                          <img
+                            src={photoUrl}
+                            alt={`Foto Properti ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveGalleryPhoto(idx)}
+                            title="Hapus foto ini"
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/65 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl border-2 border-dashed border-[#e8e2d9] bg-[#faf8f5] text-center text-xs text-[#575e5b]">
+                      <ImageIcon className="w-6 h-6 mx-auto mb-1 text-[#c29d59]" />
+                      <p className="font-medium text-[#1a3a34]">Belum ada foto properti</p>
+                      <p className="text-[11px] text-[#575e5b] mt-0.5">
+                        Klik &quot;Tambah Foto&quot; di atas untuk mengunggah foto usaha Anda.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -237,6 +237,18 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
     }
 
     if (typeof window !== "undefined") {
+      try {
+        const overrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_photos") || "{}");
+        if (destId && overrides[destId]) {
+          setCurrentDest((prev: any) => ({
+            ...prev,
+            photos: [overrides[destId], ...(prev.photos || []).filter((p: string) => p !== overrides[destId])],
+          }));
+        }
+      } catch {
+        // Ignore photo override parse errors
+      }
+
       const role = localStorage.getItem("sindar_role") as "user" | "mitra" | null;
       if (role === "user" || role === "mitra") {
         setAuthRole(role);
