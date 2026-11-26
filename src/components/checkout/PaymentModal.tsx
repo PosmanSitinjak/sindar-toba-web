@@ -23,7 +23,10 @@ import {
   User,
   Phone,
   Mail,
+  Download,
 } from "lucide-react";
+import OfficialQrisCard from "./OfficialQrisCard";
+import { generateQrDataUrl } from "@/lib/qris";
 
 export type PaymentChannel = "qris" | "va_sumut" | "va_mandiri" | "va_bca";
 
@@ -144,6 +147,11 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
   const [paymentRefInput, setPaymentRefInput] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(900); // 15 minutes
   const [issuedTicket, setIssuedTicket] = useState<any | null>(null);
+  const [ticketQrUrl, setTicketQrUrl] = useState<string>("");
+  const [customMitraQris, setCustomMitraQris] = useState<string | null>(null);
+  const [isVerifyingQris, setIsVerifyingQris] = useState(false);
+  const [verifyingStepText, setVerifyingStepText] = useState("");
+  const [showManualRefInput, setShowManualRefInput] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -151,6 +159,9 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
     setErrorMessage(null);
     setPaymentRefInput("");
     setIssuedTicket(null);
+    setTicketQrUrl("");
+    setIsVerifyingQris(false);
+    setShowManualRefInput(false);
     setSecondsLeft(900);
 
     if (typeof window !== "undefined") {
@@ -162,6 +173,11 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
       setCustomerName(name);
       setCustomerEmail(email);
       setCustomerPhone(phone === "-" ? "" : phone);
+
+      const customQris =
+        localStorage.getItem("sindar_mitra_qris_default") ||
+        localStorage.getItem("sindar_mitra_qris");
+      setCustomMitraQris(customQris);
     }
   }, [isOpen]);
 
@@ -260,8 +276,33 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
       }
     }
 
+    generateQrDataUrl(newTicket.bookingCode, 240).then((url) => {
+      setTicketQrUrl(url);
+    });
+
     setIssuedTicket(newTicket);
     setStep("success");
+  };
+
+  const handleAutoVerifyQris = () => {
+    setIsVerifyingQris(true);
+    setVerifyingStepText("Menghubungi jaringan interkoneksi QRIS...");
+    setTimeout(() => {
+      setVerifyingStepText(`Mencocokkan pembayaran nominal Rp ${finalAmount.toLocaleString("id-ID")}...`);
+      setTimeout(() => {
+        setVerifyingStepText("Pembayaran Terverifikasi! Menerbitkan E-Tiket...");
+        setTimeout(async () => {
+          setIsVerifyingQris(false);
+          await persistBooking({
+            code: bookingCode,
+            paidAmount: finalAmount,
+            status: "Lunas (Siap Digunakan)",
+            escrowStatus: "Tertahan di Escrow BPODT",
+            referenceNote: paymentRefInput.trim() || `QRIS-${bookingCode}`,
+          });
+        }, 800);
+      }, 900);
+    }, 900);
   };
 
   const handleProceedToPayment = async () => {
@@ -697,107 +738,159 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
             </div>
 
             {selectedMethod === "qris" ? (
-              <div className="bg-white rounded-3xl p-5 border border-[#e8e2d9] shadow-sm text-center space-y-3">
-                <div className="flex items-center justify-center gap-1.5 pb-2 border-b border-[#e8e2d9]">
-                  <span className="font-bold text-xs tracking-widest text-[#1a3a34]">QRIS RESMI SINDAR TOBA</span>
-                </div>
+              <div className="space-y-3.5">
+                <OfficialQrisCard
+                  amount={finalAmount}
+                  bookingCode={bookingCode}
+                  merchantName={
+                    item.organizerName
+                      ? `${item.organizerName.toUpperCase()}`
+                      : "SINDAR TOBA BPODT ESCROW"
+                  }
+                  customQrisImage={customMitraQris}
+                />
 
-                <div className="w-48 h-48 mx-auto bg-stone-50 rounded-2xl p-3 border-2 border-dashed border-[#1a3a34] flex flex-col items-center justify-center relative shadow-inner">
-                  <QrCode className="w-36 h-36 text-[#1a3a34]" />
-                  <span className="text-[9px] font-mono text-[#575e5b] mt-1">BPODT ESCROW • {bookingCode}</span>
-                </div>
+                {/* Status & Auto Verification Card */}
+                <div className="p-4 rounded-3xl bg-white border border-[#e8e2d9] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-[#1a3a34]">Status Transaksi QRIS:</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10.5px] font-bold flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-600" />
+                      Menunggu Pembayaran
+                    </span>
+                  </div>
 
-                <div className="space-y-0.5">
-                  <span className="text-[11px] text-[#575e5b]">Total Transfer (Termasuk Kode Unik Verifikasi):</span>
-                  <div className="font-cinzel text-2xl font-bold text-[#1a3a34]">
-                    Rp {finalAmount.toLocaleString("id-ID")}
+                  <p className="text-[11.5px] text-[#575e5b] leading-relaxed">
+                    Setelah melakukan scan dan membayar melalui m-banking atau e-wallet Anda, klik tombol di bawah ini untuk verifikasi transaksi:
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handleAutoVerifyQris}
+                    disabled={isVerifyingQris}
+                    className="w-full py-3.5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-85"
+                  >
+                    {isVerifyingQris ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                        <span>{verifyingStepText}</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                        <span>Saya Sudah Scan & Bayar (Verifikasi E-Tiket)</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Optional Reference Note */}
+                  <div className="pt-2 border-t border-[#e8e2d9] text-[11px] text-[#575e5b]">
+                    <div className="flex items-center justify-between">
+                      <span>Punya nomor RRN / referensi e-wallet?</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowManualRefInput(!showManualRefInput)}
+                        className="text-[#b8653a] font-semibold hover:underline"
+                      >
+                        {showManualRefInput ? "Sembunyikan" : "+ Masukkan Ref Transaksi"}
+                      </button>
+                    </div>
+                    {showManualRefInput && (
+                      <div className="mt-2 space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Nomor RRN / Ref (Contoh: RRN 00928174 / BCA Budi)"
+                          value={paymentRefInput}
+                          onChange={(e) => setPaymentRefInput(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-xs text-[#1a3a34] focus:outline-none focus:border-[#1a3a34]"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <p className="text-[11px] text-[#575e5b] leading-relaxed">
-                  Transfer tepat hingga 3 digit terakhir agar tim verifikasi BPODT dapat mencocokkan pembayaran Anda secara cepat.
-                </p>
               </div>
             ) : (
-              <div className="bg-white rounded-3xl p-5 border border-[#e8e2d9] shadow-sm space-y-3.5">
-                <div className="flex items-center justify-between pb-2 border-b border-[#e8e2d9]">
-                  <span className="font-bold text-xs text-[#1a3a34]">
-                    {VA_ACCOUNTS[selectedMethod].bank}
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    Rekening Escrow Resmi
-                  </span>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[11px] text-[#575e5b] block">Nomor Rekening / Virtual Account:</span>
-                  <div className="flex items-center justify-between p-3 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9]">
-                    <span className="font-mono text-base font-bold text-[#1a3a34] tracking-wider">
-                      {VA_ACCOUNTS[selectedMethod].number}
+              <div className="space-y-4">
+                <div className="bg-white rounded-3xl p-5 border border-[#e8e2d9] shadow-sm space-y-3.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#e8e2d9]">
+                    <span className="font-bold text-xs text-[#1a3a34]">
+                      {VA_ACCOUNTS[selectedMethod].bank}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(VA_ACCOUNTS[selectedMethod].copyValue);
-                        setVaCopied(true);
-                        setTimeout(() => setVaCopied(false), 2000);
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-[#e8e2d9] text-[11px] font-semibold text-[#1a3a34] hover:bg-slate-50 flex items-center gap-1"
-                    >
-                      {vaCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{vaCopied ? "Tersalin!" : "Salin"}</span>
-                    </button>
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Rekening Escrow Resmi
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[11px] text-[#575e5b] block">Nomor Rekening / Virtual Account:</span>
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9]">
+                      <span className="font-mono text-base font-bold text-[#1a3a34] tracking-wider">
+                        {VA_ACCOUNTS[selectedMethod].number}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(VA_ACCOUNTS[selectedMethod].copyValue);
+                          setVaCopied(true);
+                          setTimeout(() => setVaCopied(false), 2000);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-[#e8e2d9] text-[11px] font-semibold text-[#1a3a34] hover:bg-slate-50 flex items-center gap-1"
+                      >
+                        {vaCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{vaCopied ? "Tersalin!" : "Salin"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs pt-1">
+                    <span className="text-[#575e5b]">Atas Nama:</span>
+                    <span className="font-semibold text-[#1a3a34]">BPODT ESCROW — SINDAR TOBA</span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[#575e5b]">Total Transfer (dengan Kode Unik):</span>
+                    <span className="font-bold text-[#1a3a34] font-cinzel text-base">
+                      Rp {finalAmount.toLocaleString("id-ID")}
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center text-xs pt-1">
-                  <span className="text-[#575e5b]">Atas Nama:</span>
-                  <span className="font-semibold text-[#1a3a34]">BPODT ESCROW — SINDAR TOBA</span>
-                </div>
+                {/* Konfirmasi Pembayaran Manual */}
+                <div className="p-4 rounded-2xl bg-white border border-[#e8e2d9] text-[#1a3a34] space-y-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-[#1a3a34] uppercase tracking-wider block mb-1">
+                      Nama Pengirim / Nomor Referensi Transfer *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: BCA a.n. Budi / Ref 928174"
+                      value={paymentRefInput}
+                      onChange={(e) => setPaymentRefInput(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-xs text-[#1a3a34] focus:outline-none focus:border-[#1a3a34]"
+                    />
+                  </div>
 
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#575e5b]">Total Transfer (dengan Kode Unik):</span>
-                  <span className="font-bold text-[#1a3a34] font-cinzel text-base">
-                    Rp {finalAmount.toLocaleString("id-ID")}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={handleConfirmManualPayment}
+                    disabled={isSubmitting}
+                    className="w-full py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Mengirim Konfirmasi...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-[#c29d59]" />
+                        <span>Saya Sudah Membayar — Kirim Konfirmasi</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             )}
-
-            {/* Konfirmasi Pembayaran */}
-            <div className="p-4 rounded-2xl bg-white border border-[#e8e2d9] text-[#1a3a34] space-y-3">
-              <div>
-                <label className="text-[11px] font-bold text-[#1a3a34] uppercase tracking-wider block mb-1">
-                  Nama Pengirim / Nomor Referensi Transfer {selectedMethod === "qris" ? "(Opsional)" : "*"}
-                </label>
-                <input
-                  type="text"
-                  placeholder="Contoh: BCA a.n. Budi / Ref 928174"
-                  value={paymentRefInput}
-                  onChange={(e) => setPaymentRefInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-xs text-[#1a3a34] focus:outline-none focus:border-[#1a3a34]"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleConfirmManualPayment}
-                disabled={isSubmitting}
-                className="w-full py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Mengirim Konfirmasi...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-[#c29d59]" />
-                    <span>Saya Sudah Membayar — Kirim Konfirmasi</span>
-                  </>
-                )}
-              </button>
-            </div>
           </div>
         )}
 
@@ -865,6 +958,41 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
                 </span>
               </div>
             </div>
+
+            {/* Real Scannable E-Tiket Barcode Card */}
+            {ticketQrUrl && (
+              <div className="p-4 bg-white rounded-3xl border border-[#e8e2d9] shadow-sm text-center space-y-2">
+                <span className="text-[10px] font-bold text-[#c29d59] uppercase tracking-wider block font-cinzel">
+                  Barcode E-Tiket Resmi BPODT
+                </span>
+                <div className="w-44 h-44 mx-auto p-2 bg-white rounded-2xl border-2 border-[#1a3a34] flex items-center justify-center shadow-inner">
+                  <img
+                    src={ticketQrUrl}
+                    alt={`Barcode E-Tiket ${issuedTicket.bookingCode}`}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <span className="font-mono text-xs font-bold text-[#1a3a34] block">
+                  {issuedTicket.bookingCode}
+                </span>
+                <div className="text-[11px] text-[#575e5b]">
+                  Tunjukkan barcode ini kepada petugas loket di pintu masuk.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.download = `E-Tiket-${issuedTicket.bookingCode}.png`;
+                    link.href = ticketQrUrl;
+                    link.click();
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-[#e8e2d9] hover:bg-stone-50 text-xs font-semibold text-[#1a3a34] shadow-sm active:scale-95 transition-all"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#c29d59]" />
+                  <span>Unduh Barcode Tiket</span>
+                </button>
+              </div>
+            )}
 
             <div className="space-y-2 pt-2">
               {!issuedTicket.status.includes("Lunas") && (

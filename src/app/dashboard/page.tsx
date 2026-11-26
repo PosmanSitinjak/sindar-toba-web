@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { clearActiveUserSession } from "@/lib/auth";
+import { generateQrDataUrl } from "@/lib/qris";
 import {
   Ticket,
   Calendar,
@@ -38,6 +39,15 @@ export default function DashboardWisatawanPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("tiket");
   const [showQrModal, setShowQrModal] = useState<string | null>(null);
+  const [activeQrDataUrl, setActiveQrDataUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (showQrModal) {
+      generateQrDataUrl(showQrModal, 320).then((url) => setActiveQrDataUrl(url));
+    } else {
+      setActiveQrDataUrl("");
+    }
+  }, [showQrModal]);
 
   // Referral & Commission States (Reset to 0 for fresh new user)
   const [referralCode, setReferralCode] = useState("TOBA-WISATA");
@@ -1144,34 +1154,22 @@ export default function DashboardWisatawanPage() {
                     : "Scan kode ini di pintu masuk geosite untuk konfirmasi kedatangan."}
                 </p>
 
-                {/* High-res SVG QR Mockup with Used Overlay if scanned */}
-                <div className="relative w-44 h-44 sm:w-48 sm:h-48 mx-auto bg-white p-3 rounded-2xl border-2 border-[#1a3a34] flex items-center justify-center shadow-inner mb-4">
-                  <svg
-                    className={`w-full h-full text-[#1a3a34] transition-opacity ${
-                      isUsed ? "opacity-25" : ""
-                    }`}
-                    viewBox="0 0 100 100"
-                    fill="currentColor"
-                  >
-                    <rect x="5" y="5" width="25" height="25" rx="3" fill="none" stroke="currentColor" strokeWidth="4" />
-                    <rect x="11" y="11" width="13" height="13" />
-                    <rect x="70" y="5" width="25" height="25" rx="3" fill="none" stroke="currentColor" strokeWidth="4" />
-                    <rect x="76" y="11" width="13" height="13" />
-                    <rect x="5" y="70" width="25" height="25" rx="3" fill="none" stroke="currentColor" strokeWidth="4" />
-                    <rect x="11" y="76" width="13" height="13" />
-                    <rect x="36" y="10" width="8" height="8" />
-                    <rect x="50" y="15" width="8" height="8" />
-                    <rect x="36" y="25" width="12" height="6" />
-                    <rect x="10" y="36" width="8" height="15" />
-                    <rect x="25" y="42" width="10" height="8" />
-                    <rect x="42" y="42" width="16" height="16" rx="2" fill="#c29d59" />
-                    <rect x="65" y="38" width="10" height="8" />
-                    <rect x="80" y="45" width="12" height="8" />
-                    <rect x="36" y="65" width="8" height="15" />
-                    <rect x="50" y="75" width="15" height="8" />
-                    <rect x="72" y="70" width="8" height="10" />
-                    <rect x="85" y="65" width="8" height="18" />
-                  </svg>
+                {/* Real Scannable E-Tiket Barcode with Used Overlay if scanned */}
+                <div className="relative w-48 h-48 sm:w-52 sm:h-52 mx-auto bg-white p-3 rounded-2xl border-2 border-[#1a3a34] flex items-center justify-center shadow-inner mb-4">
+                  {activeQrDataUrl ? (
+                    <img
+                      src={activeQrDataUrl}
+                      alt={`QR Code E-Tiket ${showQrModal}`}
+                      className={`w-full h-full object-contain transition-opacity ${
+                        isUsed ? "opacity-25" : ""
+                      }`}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1.5 text-stone-400">
+                      <QrCode className="w-16 h-16 animate-pulse" />
+                      <span className="text-[11px]">Memuat Barcode...</span>
+                    </div>
+                  )}
                   {isUsed && (
                     <div className="absolute inset-0 flex items-center justify-center p-2">
                       <div className="bg-stone-900/95 border border-stone-500 text-stone-100 rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider rotate-[-12deg] shadow-2xl">
@@ -1181,9 +1179,25 @@ export default function DashboardWisatawanPage() {
                   )}
                 </div>
 
-                <div className="font-mono text-xs font-bold text-[#1a3a34] bg-[#faf8f5] py-2 px-3 rounded-lg border border-[#e8e2d9] mb-5">
+                <div className="font-mono text-xs font-bold text-[#1a3a34] bg-[#faf8f5] py-2 px-3 rounded-lg border border-[#e8e2d9] mb-3">
                   {showQrModal}
                 </div>
+
+                {activeQrDataUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.download = `E-Tiket-${showQrModal}.png`;
+                      link.href = activeQrDataUrl;
+                      link.click();
+                    }}
+                    className="w-full mb-3 py-2 px-3 rounded-full border border-[#e8e2d9] hover:bg-stone-50 text-[11px] font-semibold text-[#1a3a34] flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#c29d59]" />
+                    <span>Unduh Gambar Barcode</span>
+                  </button>
+                )}
 
                 <button
                   onClick={() => setShowQrModal(null)}

@@ -59,12 +59,14 @@ interface PhotoUploadFieldProps {
   value: string;
   onChange: (newImageUrl: string) => void;
   label?: string;
+  helperText?: string;
 }
 
 export default function PhotoUploadField({
   value,
   onChange,
   label = "Foto Utama Layanan / Destinasi",
+  helperText,
 }: PhotoUploadFieldProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -96,9 +98,12 @@ export default function PhotoUploadField({
 
   return (
     <div className="space-y-2.5">
-      <label className="block text-xs font-semibold text-[#1a3a34] uppercase tracking-wider">
-        {label}
-      </label>
+      <div>
+        <label className="block text-xs font-semibold text-[#1a3a34] uppercase tracking-wider">
+          {label}
+        </label>
+        {helperText && <p className="text-[11px] text-[#575e5b] mt-0.5">{helperText}</p>}
+      </div>
 
       {/* Preview Container */}
       <div className="relative h-36 sm:h-40 w-full rounded-2xl overflow-hidden border border-[#e8e2d9] bg-[#faf8f5] group">

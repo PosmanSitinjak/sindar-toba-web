@@ -99,6 +99,8 @@ export default function DashboardMitraPage() {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [isQrisModalOpen, setIsQrisModalOpen] = useState(false);
+  const [mitraQrisImage, setMitraQrisImage] = useState<string | null>(null);
 
   // State: Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -172,6 +174,15 @@ export default function DashboardMitraPage() {
         }
       } catch {
         // Ignore gallery parse errors
+      }
+      try {
+        const storedQris =
+          localStorage.getItem(`sindar_mitra_qris_${business.code}`) ||
+          localStorage.getItem("sindar_mitra_qris_default") ||
+          null;
+        setMitraQrisImage(storedQris);
+      } catch {
+        // Ignore QRIS parse errors
       }
     }
 
@@ -925,6 +936,20 @@ export default function DashboardMitraPage() {
                   <ArrowUpRight className="w-4 h-4 text-[#575e5b]" />
                 </button>
                 <button
+                  onClick={() => setIsQrisModalOpen(true)}
+                  className="w-full text-left p-2.5 sm:p-3 rounded-xl hover:bg-[#faf8f5] border border-[#e8e2d9]/60 hover:border-[#c29d59] flex items-center justify-between transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-[#1a3a34]">Barcode QRIS Usaha Mitra</span>
+                    {mitraQrisImage && (
+                      <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold">
+                        Kustom
+                      </span>
+                    )}
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-[#575e5b]" />
+                </button>
+                <button
                   onClick={() =>
                     showToast(
                       "Laporan keuangan periode berjalan (PDF/Excel) sedang diunduh..."
@@ -1536,6 +1561,114 @@ export default function DashboardMitraPage() {
                   className="px-5 py-2 rounded-full bg-[#1a3a34] text-white text-xs font-semibold uppercase tracking-wider"
                 >
                   Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 6: PENGATURAN BARCODE QRIS USAHA MITRA             */}
+      {/* ======================================================== */}
+      {isQrisModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-md bg-white rounded-3xl border border-[#e8e2d9] shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-[#1a3a34] text-white p-5 flex items-start justify-between border-b border-[#c29d59]/30">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-[#c29d59] tracking-wider block mb-1">
+                  Kanal Pembayaran Digital
+                </span>
+                <h3 className="font-newsreader text-xl font-bold">Barcode QRIS Usaha Mitra</h3>
+              </div>
+              <button
+                onClick={() => setIsQrisModalOpen(false)}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs leading-relaxed">
+                Secara default, platform SINDAR TOBA telah menyediakan <strong>QRIS Standar Nasional (ASPI/BI)</strong> otomatis tanpa biaya langganan payment gateway. Wisatawan dapat langsung scan menggunakan BCA, Mandiri, BRImo, Bank Sumut, GoPay, OVO, atau DANA.
+              </div>
+
+              {/* Status QRIS Saat Ini */}
+              <div className="p-4 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#1a3a34]">Format QRIS Aktif:</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                    {mitraQrisImage ? "QRIS Kustom Mitra" : "QRIS Nasional SINDAR TOBA"}
+                  </span>
+                </div>
+
+                {mitraQrisImage ? (
+                  <div className="space-y-2">
+                    <div className="w-40 h-40 mx-auto rounded-xl border border-stone-200 overflow-hidden bg-white p-2">
+                      <img
+                        src={mitraQrisImage}
+                        alt="QRIS Usaha Mitra"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMitraQrisImage(null);
+                        if (typeof window !== "undefined") {
+                          localStorage.removeItem(`sindar_mitra_qris_${business.code}`);
+                          localStorage.removeItem("sindar_mitra_qris_default");
+                          localStorage.removeItem("sindar_mitra_qris");
+                        }
+                        showToast("Kembali menggunakan QRIS Standar Nasional SINDAR TOBA.");
+                      }}
+                      className="text-xs text-red-600 hover:underline block mx-auto font-medium"
+                    >
+                      Hapus & Reset ke QRIS Nasional Bawaan
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center py-2 text-xs text-[#575e5b]">
+                    <QrCode className="w-12 h-12 text-[#1a3a34] mx-auto mb-1 opacity-70" />
+                    <p className="font-semibold text-[#1a3a34]">Menggunakan QRIS Nasional SINDAR TOBA</p>
+                    <p className="text-[11px] text-[#575e5b] mt-0.5">
+                      NMID: ID1024350123456 • Terhubung Escrow BPODT
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload QRIS Kustom jika mitra punya cetakan stiker QRIS sendiri */}
+              <div className="pt-2 border-t border-[#e8e2d9]">
+                <label className="text-xs font-semibold text-[#1a3a34] block mb-1.5">
+                  Punya Stiker Barcode QRIS Sendiri (Bank Sumut / BCA / GoPay)?
+                </label>
+                <PhotoUploadField
+                  label="Unggah Foto Barcode QRIS Usaha Anda"
+                  value={mitraQrisImage || ""}
+                  onChange={(val) => {
+                    setMitraQrisImage(val);
+                    if (typeof window !== "undefined" && val) {
+                      localStorage.setItem(`sindar_mitra_qris_${business.code}`, val);
+                      localStorage.setItem("sindar_mitra_qris_default", val);
+                      localStorage.setItem("sindar_mitra_qris", val);
+                    }
+                  }}
+                  helperText="Format JPG/PNG foto cetakan QRIS di meja loket atau unduhan dari m-banking."
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-[#e8e2d9]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsQrisModalOpen(false);
+                    showToast("Pengaturan Barcode QRIS berhasil disimpan!");
+                  }}
+                  className="px-5 py-2 rounded-full bg-[#1a3a34] text-[#c29d59] border border-[#c29d59] text-xs font-bold uppercase tracking-wider hover:bg-[#122a25]"
+                >
+                  Selesai & Simpan
                 </button>
               </div>
             </div>
