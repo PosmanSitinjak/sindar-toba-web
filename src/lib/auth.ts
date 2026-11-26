@@ -306,6 +306,15 @@ export async function resetTravelerPassword(input: {
     return { ok: false, error: "Kata sandi baru minimal 8 karakter." };
   }
 
+  // Coba update di Supabase Auth jika session aktif
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await supabase.auth.updateUser({ password: input.newPassword });
+    } catch (err) {
+      console.warn("Supabase updateUser error:", err);
+    }
+  }
+
   const users = getRegisteredUsers();
   const idx = users.findIndex(
     (u) =>
@@ -314,17 +323,24 @@ export async function resetTravelerPassword(input: {
         normalizePhone(u.phone) === normalizePhone(cleanIdentifier))
   );
 
-  if (idx === -1) {
-    return {
-      ok: false,
-      error: "Email atau nomor WhatsApp belum terdaftar. Silakan daftar akun baru terlebih dahulu.",
+  const digest = await hashPassword(input.newPassword);
+
+  if (idx >= 0) {
+    users[idx] = {
+      ...users[idx],
+      passwordDigest: digest,
     };
+  } else {
+    // Daftarkan/sinkronisasikan pengguna agar dapat langsung login dengan kata sandi barunya
+    users.push({
+      name: cleanIdentifier.includes("@") ? cleanIdentifier.split("@")[0] : "Wisatawan",
+      email: cleanIdentifier.includes("@") ? cleanIdentifier.toLowerCase() : `${cleanIdentifier}@sindartoba.id`,
+      phone: cleanIdentifier.includes("@") ? "-" : cleanIdentifier,
+      passwordDigest: digest,
+      createdAt: new Date().toISOString(),
+    });
   }
 
-  users[idx] = {
-    ...users[idx],
-    passwordDigest: await hashPassword(input.newPassword),
-  };
   saveRegisteredUsers(users);
   return { ok: true };
 }

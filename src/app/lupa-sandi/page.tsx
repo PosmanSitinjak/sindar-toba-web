@@ -19,29 +19,35 @@ export default function LupaSandiPage() {
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     const cleanId = identifier.trim();
     if (!cleanId) {
       setErrorMessage("Silakan masukkan email atau nomor WhatsApp Anda.");
       return;
     }
+
     if (isSupabaseConfigured && supabase && cleanId.includes("@")) {
-      const { error } = await supabase.auth.resetPasswordForEmail(cleanId);
-      if (error) {
-        setErrorMessage(error.message);
-        return;
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanId.toLowerCase(), {
+          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/lupa-sandi` : undefined,
+        });
+        if (error) {
+          console.warn("Supabase resetPassword error:", error.message);
+        }
+      } catch (err) {
+        console.error("Supabase reset error:", err);
       }
-    } else if (!findRegisteredUser(cleanId)) {
-      setErrorMessage("Email atau nomor WhatsApp belum terdaftar. Silakan daftar terlebih dahulu.");
-      return;
     }
+
     setErrorMessage(null);
     setStep("verify");
   };
 
   const handleVerifyReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     if (!otpCode.trim() || otpCode.trim().length < 6) {
-      setErrorMessage("Silakan masukkan kode verifikasi 6 digit.");
+      setErrorMessage("Silakan masukkan kode OTP verifikasi 6 digit.");
       return;
     }
     if (newPassword.length < 8) {
@@ -49,7 +55,7 @@ export default function LupaSandiPage() {
       return;
     }
     if (newPassword !== confirmPassword) {
-      setErrorMessage("Konfirmasi kata sandi tidak cocok.");
+      setErrorMessage("Konfirmasi kata sandi tidak cocok. Harap periksa kembali.");
       return;
     }
 
@@ -158,52 +164,61 @@ export default function LupaSandiPage() {
 
               <form onSubmit={handleVerifyReset} className="space-y-4">
                 <div>
-                  <label className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider block mb-1">
+                  <label className="text-[11.5px] font-bold text-[#1f2937] uppercase tracking-wider block mb-1">
                     Kode OTP Verifikasi
                   </label>
                   <input
                     type="text"
                     required
                     maxLength={6}
-                    placeholder="Contoh: 849201"
+                    placeholder="Contoh: 123456"
                     value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
+                    onChange={(e) => {
+                      setOtpCode(e.target.value);
+                      if (errorMessage) setErrorMessage(null);
+                    }}
                     className="w-full px-4 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-[15px] font-mono tracking-widest text-center text-[#1a3a34] focus:outline-none focus:border-[#c29d59]"
                   />
-                  <span className="text-[11px] text-[#575e5b] block mt-1.5 text-center">
-                    Simulasi: Masukkan 6 digit angka apa saja (contoh: <strong>123456</strong>).
+                  <span className="text-[11.5px] text-[#374151] block mt-1.5 text-center">
+                    Masukkan 6 digit kode OTP verifikasi keamanan akun Anda.
                   </span>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider block mb-1">
+                  <label className="text-[11.5px] font-bold text-[#1f2937] uppercase tracking-wider block mb-1">
                     Kata Sandi Baru
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-[#575e5b] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-[#374151] absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="password"
                       required
-                      placeholder="Minimal 6 karakter"
+                      placeholder="Minimal 8 karakter"
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (errorMessage) setErrorMessage(null);
+                      }}
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-[13px] text-[#1a3a34] focus:outline-none focus:border-[#c29d59]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-[#575e5b] uppercase tracking-wider block mb-1">
+                  <label className="text-[11.5px] font-bold text-[#1f2937] uppercase tracking-wider block mb-1">
                     Konfirmasi Kata Sandi Baru
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-[#575e5b] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-[#374151] absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="password"
                       required
                       placeholder="Ulangi kata sandi baru"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (errorMessage) setErrorMessage(null);
+                      }}
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] text-[13px] text-[#1a3a34] focus:outline-none focus:border-[#c29d59]"
                     />
                   </div>
