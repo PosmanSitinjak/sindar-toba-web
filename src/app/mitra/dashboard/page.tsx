@@ -147,14 +147,20 @@ export default function DashboardMitraPage() {
     showToast(`Beralih ke akun mitra: ${m.name}`);
   };
 
-  // Sync listings with Supabase destinations table & local photo overrides
+  // Sync listings with Supabase destinations table & local photo/status overrides
   useEffect(() => {
     let photoOverrides: Record<string, string> = {};
+    let statusOverrides: Record<string, "Aktif" | "Nonaktif"> = {};
     if (typeof window !== "undefined") {
       try {
         photoOverrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_photos") || "{}");
       } catch {
         photoOverrides = {};
+      }
+      try {
+        statusOverrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_status") || "{}");
+      } catch {
+        statusOverrides = {};
       }
       try {
         const storedGallery = localStorage.getItem(`sindar_mitra_gallery_${business.code}`);
@@ -183,13 +189,21 @@ export default function DashboardMitraPage() {
                 category: d.category,
                 price: d.price ? `Rp ${Number(d.price).toLocaleString("id-ID")} / ${d.price_unit || "orang"}` : "Gratis",
                 quota: "Tersedia",
-                status: "Aktif",
+                status: statusOverrides[d.id] || (d.status as "Aktif" | "Nonaktif") || "Aktif",
                 image: photoOverrides[d.id] || d.image || "/images/destinations/bukit-holbung.jpg",
                 description: d.description || "",
               }))
             );
           }
         });
+    } else {
+      setListings((prev) =>
+        prev.map((l) => ({
+          ...l,
+          image: photoOverrides[l.id] || l.image,
+          status: statusOverrides[l.id] || l.status || "Aktif",
+        }))
+      );
     }
   }, [business.code]);
 
@@ -201,6 +215,18 @@ export default function DashboardMitraPage() {
       localStorage.setItem("sindar_mitra_listing_photos", JSON.stringify(current));
     } catch (err) {
       console.error("Failed to save listing photo override:", err);
+    }
+  };
+
+  const saveListingStatusOverride = (id: string, status: "Aktif" | "Nonaktif") => {
+    if (typeof window === "undefined") return;
+    try {
+      const current = JSON.parse(localStorage.getItem("sindar_mitra_listing_status") || "{}");
+      current[id] = status;
+      localStorage.setItem("sindar_mitra_listing_status", JSON.stringify(current));
+      window.dispatchEvent(new Event("sindar_mitra_listing_status_changed"));
+    } catch (err) {
+      console.error("Failed to save listing status override:", err);
     }
   };
 
@@ -337,25 +363,49 @@ export default function DashboardMitraPage() {
       listings.map((l) => (l.id === updatedItem.id ? updatedItem : l))
     );
     saveListingPhotoOverride(updatedItem.id, finalImage);
+    saveListingStatusOverride(updatedItem.id, updatedItem.status);
     setEditingListing(null);
+
+    const isNonaktif = updatedItem.status === "Nonaktif";
 
     if (isSupabaseConfigured && supabase) {
       try {
         const rawNum = parseInt(updatedItem.price.replace(/\D/g, "")) || 0;
-        const { error } = await supabase
+        // Try updating with status
+        let { error } = await supabase
           .from("destinations")
           .update({
             title: updatedItem.title,
             category: updatedItem.category,
             price: rawNum,
             image: finalImage,
+            status: updatedItem.status,
           })
           .eq("id", updatedItem.id);
 
         if (error) {
+          // If status column doesn't exist yet in Supabase table schema, fallback to columns without status
+          console.warn("Supabase update with status failed, falling back without status column:", error.message);
+          const retryRes = await supabase
+            .from("destinations")
+            .update({
+              title: updatedItem.title,
+              category: updatedItem.category,
+              price: rawNum,
+              image: finalImage,
+            })
+            .eq("id", updatedItem.id);
+          error = retryRes.error;
+        }
+
+        if (error) {
           console.error("Supabase update error:", error);
         } else {
-          showToast(`Perubahan & foto "${updatedItem.title}" BERHASIL diupdate di Database Supabase!`);
+          if (isNonaktif) {
+            showToast(`Status "${updatedItem.title}" dinonaktifkan. Pemesanan publik telah ditutup sementara.`);
+          } else {
+            showToast(`Status "${updatedItem.title}" diaktifkan dan siap menerima pesanan wisatawan.`);
+          }
           return;
         }
       } catch (err) {
@@ -363,7 +413,11 @@ export default function DashboardMitraPage() {
       }
     }
 
-    showToast(`Perubahan & foto pada "${updatedItem.title}" berhasil disimpan!`);
+    if (isNonaktif) {
+      showToast(`Status "${updatedItem.title}" telah diubah ke NONAKTIF. Pemesanan publik dinonaktifkan sementara.`);
+    } else {
+      showToast(`Status "${updatedItem.title}" AKTIF. Layanan siap menerima pemesanan tamu.`);
+    }
   };
 
   // Handle Delete Listing (Direct Supabase Cloud Deletion)
@@ -818,7 +872,7 @@ export default function DashboardMitraPage() {
                         className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold mr-1 ${
                           lst.status === "Aktif"
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : "bg-stone-100 text-stone-600 border border-stone-200"
+                            : "bg-amber-100 text-amber-900 border border-amber-300"
                         }`}
                       >
                         {lst.status}

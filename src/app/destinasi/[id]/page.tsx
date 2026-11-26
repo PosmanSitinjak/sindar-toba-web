@@ -231,24 +231,37 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
               badge: data.category || prev.badge,
               photos: data.image ? [data.image, ...(prev.photos || [])] : prev.photos,
               aboutP1: data.description || prev.aboutP1,
+              status: (data.status as "Aktif" | "Nonaktif") || prev.status || "Aktif",
             }));
           }
         });
     }
 
-    if (typeof window !== "undefined") {
-      try {
-        const overrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_photos") || "{}");
-        if (destId && overrides[destId]) {
-          setCurrentDest((prev: any) => ({
-            ...prev,
-            photos: [overrides[destId], ...(prev.photos || []).filter((p: string) => p !== overrides[destId])],
-          }));
+    const checkOverrides = () => {
+      if (typeof window !== "undefined") {
+        try {
+          const photoOverrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_photos") || "{}");
+          const statusOverrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_status") || "{}");
+          if (destId) {
+            setCurrentDest((prev: any) => ({
+              ...prev,
+              photos: photoOverrides[destId]
+                ? [photoOverrides[destId], ...(prev.photos || []).filter((p: string) => p !== photoOverrides[destId])]
+                : prev.photos,
+              status: statusOverrides[destId] || prev.status || "Aktif",
+            }));
+          }
+        } catch {
+          // Ignore override parse errors
         }
-      } catch {
-        // Ignore photo override parse errors
       }
+    };
 
+    checkOverrides();
+    window.addEventListener("sindar_mitra_listing_status_changed", checkOverrides);
+    window.addEventListener("storage", checkOverrides);
+
+    if (typeof window !== "undefined") {
       const role = localStorage.getItem("sindar_role") as "user" | "mitra" | null;
       if (role === "user" || role === "mitra") {
         setAuthRole(role);
@@ -271,7 +284,12 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
         console.error(e);
       }
     }
-  }, []);
+
+    return () => {
+      window.removeEventListener("sindar_mitra_listing_status_changed", checkOverrides);
+      window.removeEventListener("storage", checkOverrides);
+    };
+  }, [destId]);
 
   // Review List State
   const [reviews, setReviews] = useState([
@@ -379,7 +397,13 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
   if (addons.ulos) selectedAddonsList.push("Sewa Kain Ulos Tradisional");
   if (addons.guide) selectedAddonsList.push("Pemandu Cerita Adat Lokal");
 
+  const isNonaktif = currentDest.status === "Nonaktif";
+
   const handleBooking = () => {
+    if (isNonaktif) {
+      showToast("Pemberitahuan: Layanan destinasi ini sedang dinonaktifkan sementara oleh pengelola mitra.");
+      return;
+    }
     setIsPaymentModalOpen(true);
   };
 
@@ -434,10 +458,16 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
 
         {/* Title & Metadata (Clean, Single Location Display) */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="px-3 py-0.5 rounded-full bg-[#c29d59]/15 border border-[#c29d59]/30 text-[#b8653a] text-[10.5px] font-semibold tracking-wider uppercase">
               {currentDest.badge}
             </span>
+            {isNonaktif && (
+              <span className="px-3 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-900 text-[10.5px] font-bold tracking-wider uppercase flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
+                Ditutup Sementara oleh Mitra
+              </span>
+            )}
           </div>
 
           <h1 className="text-2xl sm:text-4xl md:text-5xl font-newsreader font-normal text-[#1a3a34] tracking-tight mb-3">
@@ -970,10 +1000,27 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
                 </span>
                 <span className="text-[12px] text-[#575e5b] font-normal"> /pengunjung</span>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase tracking-wide">
-                Tersedia Hari Ini
-              </span>
+              {isNonaktif ? (
+                <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold uppercase tracking-wide flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 text-amber-700" />
+                  Ditutup Sementara
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase tracking-wide">
+                  Tersedia Hari Ini
+                </span>
+              )}
             </div>
+
+            {isNonaktif && (
+              <div className="my-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-semibold">Layanan Sedang Ditutup Sementara</strong>
+                  Pengelola mitra telah menonaktifkan pemesanan tiket untuk destinasi ini sementara waktu (perbaikan fasilitas atau jeda operasional).
+                </div>
+              </div>
+            )}
 
             {/* Booking Form Fields */}
             <div className="space-y-4 my-5">
@@ -1074,13 +1121,24 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
             </div>
 
             {/* CTA Button */}
-            <button
-              onClick={handleBooking}
-              className="w-full py-3.5 mt-5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-semibold text-[12.5px] uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
-            >
-              <span>Pesan Tiket Resmi Sekarang</span>
-              <ArrowRight className="w-4 h-4 text-[#c29d59]" />
-            </button>
+            {isNonaktif ? (
+              <button
+                type="button"
+                disabled
+                className="w-full py-3.5 mt-5 rounded-full bg-slate-200 border border-slate-300 text-slate-500 font-semibold text-[12px] uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <AlertCircle className="w-4 h-4 text-slate-400" />
+                <span>Layanan Ditutup Sementara oleh Mitra</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleBooking}
+                className="w-full py-3.5 mt-5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-semibold text-[12.5px] uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+              >
+                <span>Pesan Tiket Resmi Sekarang</span>
+                <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+              </button>
+            )}
 
             <div className="mt-4 pt-3 border-t border-[#e8e2d9]/60 text-[11px] text-emerald-800 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
@@ -1097,14 +1155,24 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
               Rp {totalPrice.toLocaleString("id-ID")}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={handleBooking}
-            className="px-6 py-2.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[12px] font-semibold uppercase tracking-wider shadow-sm flex items-center gap-1.5 active:scale-95"
-          >
-            <span>Pesan Sekarang</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#c29d59]" />
-          </button>
+          {isNonaktif ? (
+            <button
+              type="button"
+              disabled
+              className="px-5 py-2.5 rounded-full bg-slate-200 border border-slate-300 text-slate-500 text-[11.5px] font-semibold uppercase tracking-wider cursor-not-allowed"
+            >
+              Ditutup Sementara
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleBooking}
+              className="px-6 py-2.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[12px] font-semibold uppercase tracking-wider shadow-sm flex items-center gap-1.5 active:scale-95"
+            >
+              <span>Pesan Sekarang</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#c29d59]" />
+            </button>
+          )}
         </div>
 
         <PaymentModal

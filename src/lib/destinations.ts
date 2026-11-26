@@ -13,6 +13,7 @@ export interface Destination {
   image: string;
   description: string;
   tags: string[];
+  status?: "Aktif" | "Nonaktif";
 }
 
 export const fallbackDestinations: Destination[] = [
@@ -102,19 +103,27 @@ export const fallbackDestinations: Destination[] = [
   },
 ];
 
-function applyLocalPhotoOverrides(items: Destination[]): Destination[] {
+export function applyLocalOverrides(items: Destination[]): Destination[] {
   if (typeof window === "undefined") return items;
   try {
-    const overrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_photos") || "{}") as Record<string, string>;
-    return items.map((item) => (overrides[item.id] ? { ...item, image: overrides[item.id] } : item));
+    const photoOverrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_photos") || "{}") as Record<string, string>;
+    const statusOverrides = JSON.parse(localStorage.getItem("sindar_mitra_listing_status") || "{}") as Record<string, "Aktif" | "Nonaktif">;
+    return items.map((item) => ({
+      ...item,
+      image: photoOverrides[item.id] || item.image,
+      status: statusOverrides[item.id] || item.status || "Aktif",
+    }));
   } catch {
     return items;
   }
 }
 
+// Backward compatibility alias
+export const applyLocalPhotoOverrides = applyLocalOverrides;
+
 export async function fetchDestinations(): Promise<Destination[]> {
   if (!isSupabaseConfigured || !supabase) {
-    return applyLocalPhotoOverrides(fallbackDestinations);
+    return applyLocalOverrides(fallbackDestinations);
   }
 
   try {
@@ -125,11 +134,11 @@ export async function fetchDestinations(): Promise<Destination[]> {
 
     if (error) {
       console.warn("Supabase query error, falling back to local data:", error.message);
-      return applyLocalPhotoOverrides(fallbackDestinations);
+      return applyLocalOverrides(fallbackDestinations);
     }
 
     if (!data || data.length === 0) {
-      return applyLocalPhotoOverrides(fallbackDestinations);
+      return applyLocalOverrides(fallbackDestinations);
     }
 
     const mapped = data.map((d: any) => ({
@@ -145,9 +154,10 @@ export async function fetchDestinations(): Promise<Destination[]> {
       image: d.image,
       description: d.description,
       tags: d.tags || [],
+      status: (d.status as "Aktif" | "Nonaktif") || "Aktif",
     }));
-    return applyLocalPhotoOverrides(mapped);
+    return applyLocalOverrides(mapped);
   } catch {
-    return applyLocalPhotoOverrides(fallbackDestinations);
+    return applyLocalOverrides(fallbackDestinations);
   }
 }

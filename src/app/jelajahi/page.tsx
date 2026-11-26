@@ -26,11 +26,20 @@ export default function JelajahiPage() {
   const [listings, setListings] = useState<Destination[]>(fallbackDestinations);
 
   useEffect(() => {
-    fetchDestinations().then((data) => {
-      if (data && data.length > 0) {
-        setListings(data);
-      }
-    });
+    const loadDestinations = () => {
+      fetchDestinations().then((data) => {
+        if (data && data.length > 0) {
+          setListings(data);
+        }
+      });
+    };
+    loadDestinations();
+    window.addEventListener("sindar_mitra_listing_status_changed", loadDestinations);
+    window.addEventListener("storage", loadDestinations);
+    return () => {
+      window.removeEventListener("sindar_mitra_listing_status_changed", loadDestinations);
+      window.removeEventListener("storage", loadDestinations);
+    };
   }, []);
 
   const categories = [
@@ -176,9 +185,16 @@ export default function JelajahiPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-                  <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-white/95 text-[#1a3a34] shadow-sm">
-                    {item.category}
-                  </span>
+                  <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-white/95 text-[#1a3a34] shadow-sm">
+                      {item.category}
+                    </span>
+                    {item.status === "Nonaktif" && (
+                      <span className="px-2 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider bg-amber-500 text-white shadow-sm">
+                        Tutup Sementara
+                      </span>
+                    )}
+                  </div>
 
                   <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-medium">
                     <Star className="w-3 h-3 fill-[#c29d59] text-[#c29d59]" />
@@ -215,7 +231,13 @@ export default function JelajahiPage() {
 
                   <div className="pt-3.5 border-t border-[#e8e2d9]/60 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-[#575e5b] uppercase tracking-wider block">Mulai dari</span>
+                      <span className="text-[10px] text-[#575e5b] uppercase tracking-wider block">
+                        {item.status === "Nonaktif" ? (
+                          <span className="text-amber-700 font-bold">Nonaktif (Tutup)</span>
+                        ) : (
+                          "Mulai dari"
+                        )}
+                      </span>
                       <span className="text-[15px] sm:text-[16px] font-bold text-[#1a3a34]">
                         {item.price === "Free" ? "Gratis" : `Rp ${item.price}`}
                         <span className="text-[11px] font-normal text-[#575e5b]"> /{item.priceUnit}</span>
