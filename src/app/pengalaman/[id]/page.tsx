@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PaymentModal from "@/components/checkout/PaymentModal";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import {
   Clock,
   Users,
@@ -12,6 +13,8 @@ import {
   CheckCircle2,
   ShieldCheck,
   ArrowRight,
+  LogIn,
+  X,
 } from "lucide-react";
 
 export default function DetailPengalamanPage({ params }: { params: { id: string } }) {
@@ -116,13 +119,30 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
     },
   };
 
-  const exp = experiencesData[params.id] || experiencesData["kopi-lintong"];
+  const routeParams = useParams();
+  const expId = (routeParams?.id as string) || params?.id || "kopi-lintong";
+  const exp = experiencesData[expId] || experiencesData["kopi-lintong"];
   const totalCost = exp.price * participants;
 
-  // Payment Gateway Modal State
+  // Payment Gateway & Auth State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isAuthRequiredModalOpen, setIsAuthRequiredModalOpen] = useState(false);
+  const [authRole, setAuthRole] = useState<"guest" | "user" | "mitra">("guest");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const role = localStorage.getItem("sindar_role") as "user" | "mitra" | null;
+      if (role === "user" || role === "mitra") {
+        setAuthRole(role);
+      }
+    }
+  }, []);
 
   const handleBooking = () => {
+    if (authRole === "guest") {
+      setIsAuthRequiredModalOpen(true);
+      return;
+    }
     setIsPaymentModalOpen(true);
   };
 
@@ -296,13 +316,32 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
               </div>
             </div>
 
-            <button
-              onClick={handleBooking}
-              className="w-full py-3.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-semibold text-[12.5px] uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
-            >
-              <span>Daftar Sesi Sekarang</span>
-              <ArrowRight className="w-4 h-4 text-[#c29d59]" />
-            </button>
+            {authRole === "guest" ? (
+              <button
+                type="button"
+                onClick={handleBooking}
+                className="w-full py-3.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-semibold text-[12px] uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+              >
+                <LogIn className="w-4 h-4 text-[#c29d59]" />
+                <span>Masuk Akun untuk Daftar Sesi</span>
+                <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleBooking}
+                className="w-full py-3.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-semibold text-[12.5px] uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+              >
+                <span>Daftar Sesi Sekarang</span>
+                <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+              </button>
+            )}
+
+            {authRole === "guest" && (
+              <p className="text-[11px] text-[#575e5b] text-center mt-2.5">
+                Masuk ke akun wisatawan agar E-Tiket sesi resmi otomatis tersimpan di dashboard Anda.
+              </p>
+            )}
 
             <div className="mt-4 pt-3 border-t border-[#e8e2d9]/60 text-[11px] text-emerald-800 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
@@ -319,15 +358,81 @@ export default function DetailPengalamanPage({ params }: { params: { id: string 
               Rp {totalCost.toLocaleString("id-ID")}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={handleBooking}
-            className="px-6 py-2.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[12px] font-semibold uppercase tracking-wider shadow-sm flex items-center gap-1.5 active:scale-95"
-          >
-            <span>Pesan Sekarang</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#c29d59]" />
-          </button>
+          {authRole === "guest" ? (
+            <button
+              type="button"
+              onClick={handleBooking}
+              className="px-5 py-2.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[11.5px] font-semibold uppercase tracking-wider shadow-sm flex items-center gap-1.5 active:scale-95"
+            >
+              <LogIn className="w-3.5 h-3.5 text-[#c29d59]" />
+              <span>Masuk & Pesan</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleBooking}
+              className="px-6 py-2.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[12px] font-semibold uppercase tracking-wider shadow-sm flex items-center gap-1.5 active:scale-95"
+            >
+              <span>Pesan Sekarang</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#c29d59]" />
+            </button>
+          )}
         </div>
+
+        {/* Auth Required Modal */}
+        {isAuthRequiredModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-[#c29d59]/40 relative text-center">
+              <button
+                type="button"
+                onClick={() => setIsAuthRequiredModalOpen(false)}
+                className="p-1 rounded-full hover:bg-stone-100 text-stone-500 absolute top-4 right-4"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="w-14 h-14 rounded-2xl bg-[#1a3a34] text-[#c29d59] mx-auto flex items-center justify-center mb-4 border border-[#c29d59]/40 shadow-sm">
+                <LogIn className="w-7 h-7" />
+              </div>
+
+              <span className="font-cinzel text-[11px] font-bold text-[#c29d59] uppercase tracking-wider block mb-1">
+                Autentikasi Wisatawan
+              </span>
+              <h3 className="font-newsreader text-2xl font-bold text-[#1a3a34] mb-2">
+                Masuk untuk Melanjutkan Pemesanan
+              </h3>
+              <p className="text-xs text-[#575e5b] leading-relaxed mb-5">
+                Untuk menerbitkan E-Tiket berbarcode resmi BPODT atas nama Anda serta keamanan dana transaksi, silakan masuk ke akun wisatawan terlebih dahulu.
+              </p>
+
+              <div className="space-y-2.5">
+                <Link
+                  href={`/masuk?redirect=/pengalaman/${params.id}`}
+                  className="w-full py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+                >
+                  <LogIn className="w-4 h-4 text-[#c29d59]" />
+                  <span>Masuk ke Akun Saya</span>
+                  <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+                </Link>
+
+                <Link
+                  href={`/daftar?redirect=/pengalaman/${params.id}`}
+                  className="w-full py-2.5 rounded-full border border-[#c29d59] text-[#1a3a34] hover:bg-[#c29d59]/10 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <span>Belum Punya Akun? Daftar Baru (1 Menit)</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAuthRequiredModalOpen(false)}
+                  className="text-xs text-[#575e5b] hover:text-[#1a3a34] pt-1 block mx-auto"
+                >
+                  Batal & Kembali
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <PaymentModal
           isOpen={isPaymentModalOpen}

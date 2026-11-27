@@ -18,12 +18,17 @@ export default function DaftarPage() {
     agreeTerms: true,
   });
   const [referralValid, setReferralValid] = useState(false);
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
-  // Auto-detect referral code from query string: ?ref=KODE
+  // Auto-detect referral code from query string: ?ref=KODE & redirect
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const refParam = params.get("ref");
+      const redirect = params.get("redirect");
+      if (redirect) {
+        setRedirectPath(redirect);
+      }
       if (refParam) {
         setFormData((prev) => ({ ...prev, referralCode: refParam.toUpperCase() }));
         setReferralValid(true);
@@ -61,7 +66,10 @@ export default function DaftarPage() {
       return;
     }
 
-    router.push("/masuk?registered=true");
+    const targetUrl = redirectPath
+      ? `/masuk?registered=true&redirect=${encodeURIComponent(redirectPath)}`
+      : "/masuk?registered=true";
+    router.push(targetUrl);
   };
 
   return (
@@ -247,7 +255,10 @@ export default function DaftarPage() {
 
           <div className="mt-8 pt-4 border-t border-[#e8e2d9] text-center text-[13px] text-[#575e5b]">
             Sudah memiliki akun?{" "}
-            <Link href="/masuk" className="font-semibold text-[#1a3a34] hover:text-[#b8653a]">
+            <Link
+              href={redirectPath ? `/masuk?redirect=${encodeURIComponent(redirectPath)}` : "/masuk"}
+              className="font-semibold text-[#1a3a34] hover:text-[#b8653a]"
+            >
               Masuk di sini
             </Link>
           </div>

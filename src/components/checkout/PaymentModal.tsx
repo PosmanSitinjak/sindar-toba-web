@@ -24,6 +24,7 @@ import {
   Phone,
   Mail,
   Download,
+  LogIn,
 } from "lucide-react";
 import OfficialQrisCard from "./OfficialQrisCard";
 import { generateQrDataUrl } from "@/lib/qris";
@@ -307,6 +308,10 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
 
   const handleProceedToPayment = async () => {
     setErrorMessage(null);
+    if (!isLoggedIn) {
+      setErrorMessage("Anda harus masuk atau mendaftar akun terlebih dahulu untuk melanjutkan ke pembayaran tiket resmi.");
+      return;
+    }
     if (!customerName.trim() || !customerPhone.trim()) {
       setErrorMessage("Mohon lengkapi nama pemesan dan nomor WhatsApp aktif untuk pengiriman E-Tiket.");
       return;
@@ -510,12 +515,33 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#575e5b]">
                   Data Pemesan E-Tiket
                 </span>
-                {!isLoggedIn && (
-                  <Link href="/masuk" className="text-[11px] font-semibold text-[#b8653a] hover:underline">
-                    Masuk Akun
+                {!isLoggedIn ? (
+                  <Link
+                    href={`/masuk?redirect=${typeof window !== "undefined" ? window.location.pathname : "/dashboard"}`}
+                    className="text-[11px] font-semibold text-[#b8653a] hover:underline flex items-center gap-1"
+                  >
+                    <LogIn className="w-3 h-3" />
+                    <span>Masuk Akun</span>
                   </Link>
+                ) : (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Akun Terverifikasi
+                  </span>
                 )}
               </div>
+
+              {!isLoggedIn && (
+                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center justify-between">
+                  <span>Anda belum masuk ke akun wisatawan.</span>
+                  <Link
+                    href={`/masuk?redirect=${typeof window !== "undefined" ? window.location.pathname : "/dashboard"}`}
+                    className="font-bold underline text-amber-950 ml-2"
+                  >
+                    Masuk Sekarang →
+                  </Link>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="relative">
                   <User className="w-3.5 h-3.5 text-[#575e5b] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -693,24 +719,35 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleProceedToPayment}
-              disabled={isInitializing}
-              className="w-full py-3.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
-            >
-              {isInitializing ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Menyiapkan Pembayaran...</span>
-                </>
-              ) : (
-                <>
-                  <span>Lanjutkan Pembayaran (Rp {item.totalAmount.toLocaleString("id-ID")})</span>
-                  <ArrowRight className="w-4 h-4 text-[#c29d59]" />
-                </>
-              )}
-            </button>
+            {!isLoggedIn ? (
+              <Link
+                href={`/masuk?redirect=${typeof window !== "undefined" ? window.location.pathname : "/dashboard"}`}
+                className="w-full py-3.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+              >
+                <LogIn className="w-4 h-4 text-[#c29d59]" />
+                <span>Masuk Akun untuk Melanjutkan Pembayaran</span>
+                <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={handleProceedToPayment}
+                disabled={isInitializing}
+                className="w-full py-3.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+              >
+                {isInitializing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Menyiapkan Pembayaran...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Lanjutkan Pembayaran (Rp {item.totalAmount.toLocaleString("id-ID")})</span>
+                    <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+                  </>
+                )}
+              </button>
+            )}
           </div>
         )}
 

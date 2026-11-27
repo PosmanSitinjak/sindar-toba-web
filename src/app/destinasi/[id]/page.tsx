@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PaymentModal from "@/components/checkout/PaymentModal";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
   MapPin,
@@ -47,6 +48,12 @@ const destinationsData: { [key: string]: any } = {
       "Bukit Holbung adalah salah satu situs bentang alam paling menakjubkan di kawasan Danau Toba. Berdiri di atas perbukitan hijau bergelombang yang telah berusia ratusan ribu tahun sejak letusan supervulkan Toba, bukit ini menyajikan sudut pandang 360 derajat ke perairan biru danau dan punggungan tebing caldera.",
     aboutP2:
       "Dikenal secara populer sebagai 'Bukit Teletubbies' karena lekukan rumput savananya yang lembut, tempat ini menjadi saksi sejarah migrasi suku Batak kuno yang menyeberang dari daratan utama Sumatera menuju pulau Samosir.",
+    highlights: [
+      "Trekking ramah keluarga (15-20 menit)",
+      "Panorama matahari terbit & kabut danau 360°",
+      "Spot foto berlatar Desa Meat & Pusuk Buhit",
+      "Dikelola langsung Pokdarwis Holbung Harian Boho",
+    ],
     manager: "Dikelola oleh Pokdarwis Holbung Harian Boho",
   },
   "tenun-ulos-suhi-suhi": {
@@ -67,6 +74,12 @@ const destinationsData: { [key: string]: any } = {
       "Desa Huta Raja di Lumban Suhi-suhi Toruan adalah sentra pelestarian tenun kain Ulos Batak tertua yang masih mempertahankan teknik gedog tradisional tanpa mesin. Di pelataran deretan Rumah Bolon yang berjejer menghadap Danau Toba, para Inang penenun merajut benang dengan pewarna alami dari tanaman hutan kaldera.",
     aboutP2:
       "Wisatawan dapat belajar langsung filosofi ragam motif Ulos seperti Sadum, Ragi Hotang, dan Harungguan, serta membeli karya tenun otentik langsung dari tangan pengrajin tanpa perantara.",
+    highlights: [
+      "Workshop tenun gedog tradisional tanpa mesin",
+      "Deretan Rumah Bolon otentik menghadap danau",
+      "Koleksi motif Ulos langka dengan pewarna alami",
+      "Belanja langsung dari tangan para Inang pengrajin",
+    ],
     manager: "Dikelola oleh Komunitas Penenun Inang Huta Raja",
   },
   "desa-tomok": {
@@ -87,6 +100,12 @@ const destinationsData: { [key: string]: any } = {
       "Desa Tomok adalah gerbang utama mengenal sejarah awal peradaban masyarakat Batak Toba di Pulau Samosir. Di desa ini terdapat sarkofagus batu monolithic berusia lebih dari 450 tahun milik Raja Ompu Soribuntu Sidabutar beserta patung tari sakral Sigale-gale.",
     aboutP2:
       "Setiap sudut desa dipenuhi ukiran Gorga Batak bercorak merah, hitam, dan putih, menceritakan kosmologi penciptaan Benua Atas, Benua Tengah, dan Benua Bawah.",
+    highlights: [
+      "Sarkofagus batu megalitikum Raja Sidabutar (450+ thn)",
+      "Pertunjukan tari sakral boneka kayu Sigale-gale",
+      "Arsitektur ukiran Gorga Batak tiga warna kosmologi",
+      "Pusat cenderamata & museum kebudayaan Batak kuno",
+    ],
     manager: "Dikelola oleh Lembaga Adat Kenegerian Tomok & Dinas Kebudayaan",
   },
   "lembah-bakkara": {
@@ -107,6 +126,12 @@ const destinationsData: { [key: string]: any } = {
       "Lembah Bakkara diapit tebing-tebing raksasa kaldera yang menjulang tinggi hingga 400 meter. Di lembah subur yang dialiri dua sungai purba ini lahir Pahlawan Nasional Raja Sisingamangaraja XII.",
     aboutP2:
       "Terdapat mata air jernih Aek Sipangolu yang keluar dari celah batu padas dan diyakini membawa khasiat kesegaran alami bagi siapa pun yang membasuh diri.",
+    highlights: [
+      "Lembah hijau diapit tebing megah kaldera 400m",
+      "Mata air sakral Aek Sipangolu berkhasiat alami",
+      "Jejak sejarah Istana Raja Sisingamangaraja XII",
+      "Pertemuan dua aliran sungai purba kaldera Toba",
+    ],
     manager: "Dikelola oleh Pokdarwis Bakkara & Disparpora Humbahas",
   },
   "bukit-tarabunga": {
@@ -127,6 +152,12 @@ const destinationsData: { [key: string]: any } = {
       "Bukit Tarabunga menyajikan panorama lengkung teluk Danau Toba bagian selatan yang berpadu dengan petak-petak persawahan terasering hijau. Dari ketinggian 1.150 mdpl, pengunjung dapat menyaksikan perahu nelayan tradisional dan pemandangan matahari terbenam yang memantul di permukaan danau.",
     aboutP2:
       "Terletak hanya 5 kilometer dari pusat kota Balige dan Museum Batak TB Silalahi Center, bukit ini menjadi spot favorit para fotografer lanskap dan penikmat ketenangan alam pedesaan Batak.",
+    highlights: [
+      "Panorama sunset tercantik di Teluk Balige",
+      "Lanskap terasering persawahan hijau berpadu danau",
+      "Hanya 5 km dari pusat kota & Museum TB Silalahi",
+      "Spot foto lanskap favorit para fotografer",
+    ],
     manager: "Dikelola oleh Komunitas Sadar Wisata Tarabunga Tampahan",
   },
   "sipiso-piso": {
@@ -148,6 +179,12 @@ const destinationsData: { [key: string]: any } = {
       "Sipiso-piso adalah air terjun vertikal tunggal setinggi 120 meter yang jatuh dari aliran sungai bawah tanah di tepi plato Karo menuju dasar kaldera Danau Toba. Aliran airnya membelah batuan piroklastik hasil letusan dahsyat gunung api purba ratusan ribu tahun lalu.",
     aboutP2:
       "Dari gardu pandang, pengunjung dapat menikmati panorama teluk Tongging yang memanjang hingga ke perbatasan Samosir dan Simalungun.",
+    highlights: [
+      "Air terjun vertikal tunggal 120m di bibir kaldera",
+      "Panorama gardu pandang teluk Tongging & perbukitan",
+      "Batuan piroklastik hasil letusan supervulkan purba",
+      "Jalur trekking berundak menuruni dasar air terjun",
+    ],
     manager: "Dikelola oleh Dinas Kebudayaan & Pariwisata Kab. Karo",
   },
   "menara-tele": {
@@ -168,6 +205,12 @@ const destinationsData: { [key: string]: any } = {
       "Menara Pandang Tele berdiri di ketinggian 1.450 mdpl pada lereng barat kaldera. Dari puncak menara 4 lantai ini terlihat seluruh tubuh Pulau Samosir yang dikepung perairan biru Danau Toba serta perbukitan pinus yang megah.",
     aboutP2:
       "Jalur darat Tele merupakan rute bersejarah satu-satunya yang menyambungkan daratan utama Pulau Sumatera ke Samosir melalui jembatan terusan Tano Ponggol.",
+    highlights: [
+      "Menara gardu pandang 4 lantai di punggung barat",
+      "Sudut pandang 360° seluruh perairan Danau Toba & Samosir",
+      "Jalur darat bersejarah via jembatan Tano Ponggol",
+      "Udara sejuk pegunungan pinus di 1.450 mdpl",
+    ],
     manager: "Dikelola oleh Dinas Pariwisata Kab. Samosir",
   },
   "kopi-lintong-roastery": {
@@ -188,15 +231,30 @@ const destinationsData: { [key: string]: any } = {
       "Kopi Lintong ditanam di dataran tinggi vulkanik berketinggian 1.400 - 1.600 mdpl di selatan Danau Toba. Diproses menggunakan metode khas 'Giling Basah' (Wet-Hulled) yang menghasilkan karakter kopi berat (full body), keasaman seimbang, dan aroma rempah-rempah tanah vulkanik yang mendunia.",
     aboutP2:
       "Pengunjung dapat mengikuti tur kebun kopi organik, belajar memilah biji merah matang, dan mencicipi cupping room profesional bersama roaster lokal.",
+    highlights: [
+      "Tur edukasi kebun kopi vulkanik organik 1.400 mdpl",
+      "Proses pengolahan giling basah khas Batak (wet-hulled)",
+      "Sesi cupping lab profesional bersama master roaster",
+      "Cicipi kopi specialty berindikasi geografis resmi",
+    ],
     manager: "Dikelola oleh Koperasi Petani Kopi Organik Lintong",
   },
 };
 
 export default function DetailDestinasiPage({ params }: { params?: { id?: string } }) {
-  const destId = params?.id || "bukit-holbung";
+  const routeParams = useParams();
+  const rawId = (routeParams?.id as string) || params?.id || "bukit-holbung";
+  const destId = decodeURIComponent(rawId).toLowerCase();
+
   const [currentDest, setCurrentDest] = useState(
     destinationsData[destId] || destinationsData["bukit-holbung"]
   );
+
+  useEffect(() => {
+    if (destId && destinationsData[destId]) {
+      setCurrentDest(destinationsData[destId]);
+    }
+  }, [destId]);
 
   const [activeTab, setActiveTab] = useState("tentang");
   const [ticketCount, setTicketCount] = useState(2);
@@ -392,6 +450,7 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
 
   // Payment Gateway Modal State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isAuthRequiredModalOpen, setIsAuthRequiredModalOpen] = useState(false);
 
   const selectedAddonsList: string[] = [];
   if (addons.ulos) selectedAddonsList.push("Sewa Kain Ulos Tradisional");
@@ -404,6 +463,12 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
       showToast("Pemberitahuan: Layanan destinasi ini sedang dinonaktifkan sementara oleh pengelola mitra.");
       return;
     }
+
+    if (authRole === "guest") {
+      setIsAuthRequiredModalOpen(true);
+      return;
+    }
+
     setIsPaymentModalOpen(true);
   };
 
@@ -596,14 +661,16 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
               <div className="flex flex-col gap-6 text-[#2c3531] leading-relaxed">
                 <div>
                   <h2 className="font-newsreader text-xl sm:text-2xl font-semibold text-[#1a3a34] mb-3">
-                    Keajaiban Savana Kaldera di Jantung Samosir
+                    {currentDest.aboutTitle || currentDest.title}
                   </h2>
                   <p className="text-[14px] sm:text-[15px] mb-3.5">
-                    Bukit Holbung adalah salah satu situs bentang alam paling menakjubkan di kawasan Danau Toba. Berdiri di atas perbukitan hijau bergelombang yang telah berusia ratusan ribu tahun sejak letusan supervulkan Toba, bukit ini menyajikan sudut pandang 360 derajat ke perairan biru danau dan punggungan tebing caldera.
+                    {currentDest.aboutP1}
                   </p>
-                  <p className="text-[14px] sm:text-[15px]">
-                    Dikenal secara populer sebagai &apos;Bukit Teletubbies&apos; karena lekukan rumput savananya yang lembut, tempat ini menjadi saksi sejarah migrasi suku Batak kuno yang menyeberang dari daratan utama Sumatera menuju pulau Samosir.
-                  </p>
+                  {currentDest.aboutP2 && (
+                    <p className="text-[14px] sm:text-[15px]">
+                      {currentDest.aboutP2}
+                    </p>
+                  )}
                 </div>
 
                 <div className="bg-white border border-[#e8e2d9] rounded-2xl p-5 sm:p-6 shadow-sm">
@@ -611,33 +678,38 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
                     Sorotan Pengalaman
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[12.5px] sm:text-[13px]">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#c29d59] shrink-0" />
-                      <span>Trekking ramah keluarga (15-20 menit)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#c29d59] shrink-0" />
-                      <span>Panorama matahari terbit & kabut danau</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#c29d59] shrink-0" />
-                      <span>Spot foto berlatar Desa Meat & Pusuk Buhit</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#c29d59] shrink-0" />
-                      <span>Dikelola kelompok sadar wisata (Pokdarwis)</span>
-                    </div>
+                    {(
+                      currentDest.highlights || [
+                        "Trekking ramah keluarga & eksplorasi alam",
+                        "Panorama pemandangan danau & tebing kaldera",
+                        "Spot foto budaya dan warisan sejarah Batak",
+                        "Dikelola resmi oleh kelompok sadar wisata (Pokdarwis)",
+                      ]
+                    ).map((hl: string, idx: number) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-[#c29d59] shrink-0" />
+                        <span>{hl}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* Host / Pokdarwis Profile */}
                 <div className="flex items-center gap-3.5 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-[#f2ede5] border border-[#e8e2d9]">
                   <div className="w-11 h-11 rounded-full bg-[#1a3a34] text-white flex items-center justify-center font-cinzel font-bold text-sm shrink-0">
-                    HB
+                    {currentDest.manager
+                      ? currentDest.manager
+                          .replace(/Dikelola oleh\s*/i, "")
+                          .split(" ")
+                          .slice(0, 2)
+                          .map((w: string) => w[0])
+                          .join("")
+                          .toUpperCase()
+                      : "ST"}
                   </div>
                   <div>
                     <h4 className="font-semibold text-[#1a3a34] text-[13.5px] sm:text-[14px]">
-                      Dikelola oleh Pokdarwis Holbung Harian Boho
+                      {currentDest.manager || "Dikelola oleh Pokdarwis Resmi Kaldera Toba"}
                     </h4>
                     <p className="text-[11.5px] text-[#575e5b]">
                       Mitra Resmi Terverifikasi BPODT sejak 2022 • Standar CHSE Pariwisata Bersih
@@ -708,7 +780,7 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
                           Ulasan & Pengalaman Wisatawan
                         </h3>
                         <p className="text-[12.5px] sm:text-[13px] text-[#575e5b] mt-0.5">
-                          Berdasarkan {1240 + reviews.length - 3} ulasan terverifikasi dari pengunjung Geosite Bukit Holbung
+                          Berdasarkan {(currentDest.baseReviews || 500) + reviews.length - 3} ulasan terverifikasi dari pengunjung {currentDest.title}
                         </p>
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10.5px] font-semibold mt-2">
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -1130,14 +1202,31 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
                 <AlertCircle className="w-4 h-4 text-slate-400" />
                 <span>Layanan Ditutup Sementara oleh Mitra</span>
               </button>
+            ) : authRole === "guest" ? (
+              <button
+                type="button"
+                onClick={handleBooking}
+                className="w-full py-3.5 mt-5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-semibold text-[12px] uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+              >
+                <LogIn className="w-4 h-4 text-[#c29d59]" />
+                <span>Masuk Akun untuk Pesan Tiket</span>
+                <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+              </button>
             ) : (
               <button
+                type="button"
                 onClick={handleBooking}
                 className="w-full py-3.5 mt-5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-semibold text-[12.5px] uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
               >
                 <span>Pesan Tiket Resmi Sekarang</span>
                 <ArrowRight className="w-4 h-4 text-[#c29d59]" />
               </button>
+            )}
+
+            {authRole === "guest" && !isNonaktif && (
+              <p className="text-[11px] text-[#575e5b] text-center mt-2.5">
+                Masuk ke akun wisatawan agar E-Tiket resmi otomatis tersimpan di dashboard Anda.
+              </p>
             )}
 
             <div className="mt-4 pt-3 border-t border-[#e8e2d9]/60 text-[11px] text-emerald-800 flex items-center gap-2">
@@ -1163,6 +1252,15 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
             >
               Ditutup Sementara
             </button>
+          ) : authRole === "guest" ? (
+            <button
+              type="button"
+              onClick={handleBooking}
+              className="px-5 py-2.5 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white text-[11.5px] font-semibold uppercase tracking-wider shadow-sm flex items-center gap-1.5 active:scale-95"
+            >
+              <LogIn className="w-3.5 h-3.5 text-[#c29d59]" />
+              <span>Masuk & Pesan</span>
+            </button>
           ) : (
             <button
               type="button"
@@ -1174,6 +1272,72 @@ export default function DetailDestinasiPage({ params }: { params?: { id?: string
             </button>
           )}
         </div>
+
+        {/* Modal Diperlukan Login (Auth Required Modal) */}
+        {isAuthRequiredModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-[#c29d59]/40 relative text-center">
+              <button
+                type="button"
+                onClick={() => setIsAuthRequiredModalOpen(false)}
+                className="p-1 rounded-full hover:bg-stone-100 text-stone-500 absolute top-4 right-4"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="w-14 h-14 rounded-2xl bg-[#1a3a34] text-[#c29d59] mx-auto flex items-center justify-center mb-4 border border-[#c29d59]/40 shadow-sm">
+                <LogIn className="w-7 h-7" />
+              </div>
+
+              <span className="font-cinzel text-[11px] font-bold text-[#c29d59] uppercase tracking-wider block mb-1">
+                Autentikasi Wisatawan
+              </span>
+              <h3 className="font-newsreader text-2xl font-bold text-[#1a3a34] mb-2">
+                Masuk untuk Melanjutkan Pemesanan
+              </h3>
+              <p className="text-xs text-[#575e5b] leading-relaxed mb-5">
+                Untuk menerbitkan E-Tiket resmi berbarcode BPODT atas nama Anda serta keamanan transaksi, Anda harus masuk ke akun wisatawan terlebih dahulu.
+              </p>
+
+              {/* Order Summary Snapshot */}
+              <div className="p-3.5 rounded-2xl bg-[#faf8f5] border border-[#e8e2d9] text-left text-xs mb-5 space-y-1">
+                <div className="flex justify-between font-semibold text-[#1a3a34]">
+                  <span>{currentDest.title}</span>
+                  <span>Rp {totalPrice.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="text-[11px] text-[#575e5b]">
+                  {selectedDate} • {ticketCount} Tiket
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <Link
+                  href={`/masuk?redirect=/destinasi/${destId}`}
+                  className="w-full py-3 rounded-full bg-[#1a3a34] hover:bg-[#122a25] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+                >
+                  <LogIn className="w-4 h-4 text-[#c29d59]" />
+                  <span>Masuk ke Akun Saya</span>
+                  <ArrowRight className="w-4 h-4 text-[#c29d59]" />
+                </Link>
+
+                <Link
+                  href={`/daftar?redirect=/destinasi/${destId}`}
+                  className="w-full py-2.5 rounded-full border border-[#c29d59] text-[#1a3a34] hover:bg-[#c29d59]/10 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <span>Belum Punya Akun? Daftar Baru (1 Menit)</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAuthRequiredModalOpen(false)}
+                  className="text-xs text-[#575e5b] hover:text-[#1a3a34] pt-1 block mx-auto"
+                >
+                  Batal & Kembali
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <PaymentModal
           isOpen={isPaymentModalOpen}

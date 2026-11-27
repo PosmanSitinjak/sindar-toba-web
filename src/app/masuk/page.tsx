@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Lock, Mail, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowRight, Lock, Mail, ArrowLeft, CheckCircle2, AlertCircle, LogIn } from "lucide-react";
 import { getLastRegisteredEmail, findRegisteredUser, loginTraveler } from "@/lib/auth";
 
 export default function MasukPage() {
@@ -15,10 +15,15 @@ export default function MasukPage() {
   const [registeredName, setRegisteredName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+      if (redirect) {
+        setRedirectPath(redirect);
+      }
       if (params.get("registered") === "true") {
         setIsJustRegistered(true);
         const lastEmail = getLastRegisteredEmail();
@@ -48,7 +53,8 @@ export default function MasukPage() {
       return;
     }
 
-    router.push("/dashboard");
+    const targetUrl = redirectPath || "/dashboard";
+    router.push(targetUrl);
   };
 
   return (
@@ -85,6 +91,14 @@ export default function MasukPage() {
             </p>
           </div>
 
+          {/* Banner Menuju Pemesanan Tiket */}
+          {redirectPath && (
+            <div className="mb-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5 shadow-sm">
+              <LogIn className="w-4 h-4 text-amber-700 shrink-0" />
+              <span>Silakan masuk terlebih dahulu untuk melanjutkan pemesanan E-Tiket resmi Anda.</span>
+            </div>
+          )}
+
           {/* Banner Error Login */}
           {errorMessage && (
             <div className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-[12.5px] flex items-start gap-2.5">
@@ -92,7 +106,10 @@ export default function MasukPage() {
               <div>
                 <span className="block">{errorMessage}</span>
                 {errorMessage.toLowerCase().includes("daftar") && (
-                  <Link href="/daftar" className="font-bold underline text-red-900 mt-1 inline-block">
+                  <Link
+                    href={redirectPath ? `/daftar?redirect=${encodeURIComponent(redirectPath)}` : "/daftar"}
+                    className="font-bold underline text-red-900 mt-1 inline-block"
+                  >
                     Daftar Akun Baru →
                   </Link>
                 )}
@@ -168,7 +185,10 @@ export default function MasukPage() {
 
           <div className="mt-8 pt-4 border-t border-[#e8e2d9] text-center text-[13px] text-[#575e5b]">
             Belum memiliki akun?{" "}
-            <Link href="/daftar" className="font-semibold text-[#1a3a34] hover:text-[#b8653a]">
+            <Link
+              href={redirectPath ? `/daftar?redirect=${encodeURIComponent(redirectPath)}` : "/daftar"}
+              className="font-semibold text-[#1a3a34] hover:text-[#b8653a]"
+            >
               Daftar Sekarang
             </Link>
           </div>
