@@ -1135,9 +1135,11 @@ export default function DashboardWisatawanPage() {
         {/* QR Code Modal Popup (Mobile Responsive) */}
         {showQrModal && (() => {
           const matchedTicket = activeTickets.find((t) => t.bookingCode === showQrModal);
+          const rawStatus = matchedTicket?.status?.toLowerCase() || "";
           const isUsed =
-            matchedTicket?.status?.toLowerCase().includes("selesai") ||
-            matchedTicket?.status?.toLowerCase().includes("digunakan");
+            rawStatus.includes("sudah digunakan") ||
+            rawStatus.includes("telah digunakan") ||
+            (rawStatus.includes("selesai") && !rawStatus.includes("siap") && !rawStatus.includes("lunas"));
 
           return (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1148,11 +1150,25 @@ export default function DashboardWisatawanPage() {
                 <h3 className="font-newsreader text-xl sm:text-2xl font-bold text-[#1a3a34] mb-1.5">
                   QR Code E-Tiket
                 </h3>
-                <p className="text-[11.5px] sm:text-[12px] text-[#575e5b] mb-4 sm:mb-6">
+                <p className="text-[11.5px] sm:text-[12px] text-[#575e5b] mb-3">
                   {isUsed
                     ? "Tiket ini telah divalidasi dan digunakan di pintu masuk geosite."
                     : "Scan kode ini di pintu masuk geosite untuk konfirmasi kedatangan."}
                 </p>
+
+                {/* Status Validasi Tiket */}
+                <div className="mb-4">
+                  {isUsed ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-700 text-[11px] font-bold border border-stone-300">
+                      ✓ Telah Digunakan di Loket
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      E-Tiket Aktif • Siap Di-scan
+                    </span>
+                  )}
+                </div>
 
                 {/* Real Scannable E-Tiket Barcode with Used Overlay if scanned */}
                 <div className="relative w-48 h-48 sm:w-52 sm:h-52 mx-auto bg-white p-3 rounded-2xl border-2 border-[#1a3a34] flex items-center justify-center shadow-inner mb-4">

@@ -25,6 +25,7 @@ import {
   Mail,
   Download,
   LogIn,
+  HelpCircle,
 } from "lucide-react";
 import OfficialQrisCard from "./OfficialQrisCard";
 import { generateQrDataUrl } from "@/lib/qris";
@@ -1053,12 +1054,11 @@ export default function PaymentModal({ isOpen, onClose, item }: PaymentModalProp
               </Link>
 
               <Link
-                href="/admin/dashboard"
-                target="_blank"
-                className="w-full py-2.5 rounded-full border border-[#c29d59] text-[#1a3a34] hover:bg-[#c29d59]/10 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
+                href="/bantuan"
+                className="w-full py-2.5 rounded-full border border-[#e8e2d9] hover:bg-stone-50 text-[#575e5b] hover:text-[#1a3a34] font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
               >
-                <ExternalLink className="w-3.5 h-3.5 text-[#c29d59]" />
-                <span>Cek Status di Konsol Admin BPODT</span>
+                <HelpCircle className="w-3.5 h-3.5 text-[#c29d59]" />
+                <span>Pusat Bantuan & Layanan Wisatawan</span>
               </Link>
 
               <button
